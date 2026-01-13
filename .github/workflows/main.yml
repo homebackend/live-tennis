@@ -159,4 +159,4 @@ jobs:
             artifacts/linux-packages-deb-rpm-appimage/dist-gnome/*.zip
             artifacts/linux-packages-arch/*.pacman
             artifacts/windows-installer/*.exe
-            artifacts/android/app-*.apk
+            artifacts/android/*/app-*.apk
