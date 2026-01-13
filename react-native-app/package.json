@@ -1,6 +1,6 @@
 {
   "name": "livetennis",
-  "version": "4.0.4",
+  "version": "5.0.1",
   "private": true,
   "scripts": {
     "flags": "node src/flags_generator.js",
@@ -10,7 +10,8 @@
     "start": "npm run flags && react-native start",
     "clean": "cd android && ./gradlew clean",
     "log:android": "react-native log-android",
-    "package:android": "npm install && npm run flags && cd android && ./gradlew assembleDebug",
+    "package:android": "npm install && npm run flags && cd android && ./gradlew assembleDebug assembleRelease",
+    "version:increment": "node incrementVersionCode.js",
     "test": "jest"
   },
   "dependencies": {

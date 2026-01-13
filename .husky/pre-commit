@@ -1,0 +1,7 @@
+#!/bin/sh
+
+npm run sync
+
+if ! git diff --cached --quiet -- "react-native-app/"; then
+	npm run version:android:increment && git add .
+fi

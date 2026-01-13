@@ -30,6 +30,7 @@
     "log:android": "cd react-native-app && npm run log:android",
     "log:adb": "adb logcat *:E",
     "prettify": "prettier --write dist-gnome/extension.js dist-gnome/prefs.js",
+    "version:android:increment": "cd react-native-app && npm run version:increment",
     "package:gnome": "npm run clean:gnome && npm run build && cd dist-gnome && zip -qr live-tennis-gnome-extension.zip extension.js prefs.js stylesheet.css metadata.json icons flags schemas",
     "package:electron": "npm run build && electron-builder --dir",
     "package:android": "cd react-native-app && npm run package:android",
@@ -38,7 +39,8 @@
     "clean": "npm run clean:electron && npm run clean:gnome && npm run clean:android",
     "clean:electron": "rm -rf dist release",
     "clean:gnome": "rm -rf dist-gnome",
-    "clean:android": "cd react-native-app && npm run clean"
+    "clean:android": "cd react-native-app && npm run clean",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@girs/adw-1": "^1.8.0-4.0.0-beta.36",
@@ -61,6 +63,7 @@
     "esbuild": "^0.25.10",
     "eslint": "^9.39.2",
     "fs-extra": "^11.3.2",
+    "husky": "^9.1.7",
     "prettier": "^3.6.2",
     "sslkeylog": "^0.2.2",
     "ts-node": "^10.9.2",
