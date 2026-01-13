@@ -1,11 +1,12 @@
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { cwd, exit } from 'process';
 
-const gradlePath = path.join(__dirname, 'android/app/build.gradle');
+const gradlePath = join(cwd(), 'android/app/build.gradle');
 
 function incrementVersionCode() {
     try {
-        let content = fs.readFileSync(gradlePath, 'utf8');
+        let content = readFileSync(gradlePath, 'utf8');
 
         const versionCodeRegex = /versionCode\s+(\d+)/;
         const match = content.match(versionCodeRegex);
@@ -19,13 +20,16 @@ function incrementVersionCode() {
                 `versionCode ${newVersionCode}`
             );
 
-            fs.writeFileSync(gradlePath, updatedContent, 'utf8');
+            writeFileSync(gradlePath, updatedContent, 'utf8');
             console.log(`✅ VersionCode updated from ${currentVersionCode} to ${newVersionCode}`);
+            exit(2);
         } else {
             console.error("❌ Could not find 'versionCode' in build.gradle");
+            exit(1);
         }
     } catch (error) {
         console.error("❌ Error updating build.gradle:", error.message);
+        exit(1);
     }
 }
 

@@ -1,7 +1,13 @@
 #!/bin/sh
 
-npm run sync
+npm run sync || ( echo 'Please review and add changed files to git staging area' 1>&2 && exit 1 )
 
-if ! git diff --cached --quiet -- "react-native-app/"; then
-	npm run version:android:increment && git add .
+if [ ! -f '.xandroid' ]
+then
+	npm run version:android:increment
+	echo 'Please review and add changed files to the git staging area' 1>&2
+	exit 1
+else
+	echo 'Removing .xandroid file' 1>&2
+	rm -f .xandroid
 fi
