@@ -27,7 +27,7 @@ jobs:
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Install dependencies (NodeJS)
-        run: npm install
+        run: npm ci
 
       - name: Create GNOME shell extension package
         run: npm run package:gnome
@@ -65,7 +65,7 @@ jobs:
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
       
       - name: Install dependencies and build Arch package
-        run: npm install && npm run build && npx electron-builder --linux pacman --publish never
+        run: npm ci && npm run build && npx electron-builder --linux pacman --publish never
 
       - name: Upload Arch package artifact
         uses: actions/upload-artifact@v4
@@ -86,7 +86,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies and build Windows .exe
-        run: npm install && npm run build && npx electron-builder --win --publish never
+        run: npm ci && npm run build && npx electron-builder --win --publish never
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -112,7 +112,7 @@ jobs:
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Create Android apk
-        run: npm install && npm run package:android
+        run: npm ci && npm run package:android
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4

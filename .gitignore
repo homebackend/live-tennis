@@ -144,4 +144,4 @@ vite.config.ts.timestamp-*
 src/schemas/*
 run
 .vscode
-package-lock.json
+
