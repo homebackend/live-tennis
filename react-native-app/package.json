@@ -3,7 +3,7 @@
   "version": "5.0.1",
   "private": true,
   "scripts": {
-    "flags": "node src/flags_generator.js",
+    "flags": "node src/flags_generator.mjs",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint .",

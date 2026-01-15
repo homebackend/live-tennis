@@ -126,7 +126,7 @@ export default class LiveScoreExtension extends Extension implements LiveViewMan
         if (_dataFetchTimeout) {
             GLib.source_remove(_dataFetchTimeout);
             _dataFetchTimeout = null;
-        }        
+        }
     }
 
     destroyLiveView() {
@@ -171,6 +171,10 @@ export default class LiveScoreExtension extends Extension implements LiveViewMan
     }
 
     setCycleTimeout(interval: number, cycler: () => Promise<boolean>): void {
+        if (this._cycleIntervalId) {
+            this.unsetFetchTimer();
+        }
+
         this._cycleIntervalId = setInterval(async () => {
             if (await cycler()) {
                 this.destroyCycleTimeout();
