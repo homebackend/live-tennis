@@ -154,6 +154,7 @@ export class GnomePopupSubMenuItem implements PopupSubMenuItem<PopupMenu.PopupSu
 
     destroy(): void {
         this._menu.destroy();
+        this._menu = null;
     }
 }
 
@@ -188,11 +189,14 @@ export class GnomeLinkMenuItem implements MenuItem<PopupMenu.PopupMenuItem> {
 
     destroy(): void {
         this._renderer.destroy();
+        this._item.destroy();
+        this._item = null;
     }
 }
 
 export class GnomeCheckedMenuItem implements CheckedMenuItem<typeof GCheckedMenuItem> {
     private _item: GCheckedMenuItem;
+    private _itemConnectId?: number;
 
     constructor(properties: CheckedMenuItemProperties) {
         this._item = new GCheckedMenuItem(properties);
@@ -214,16 +218,21 @@ export class GnomeCheckedMenuItem implements CheckedMenuItem<typeof GCheckedMenu
     }
 
     connect(action: string, handler: () => void): void {
-        this._item.connect(action, handler);
+        this._itemConnectId = this._item.connect(action, handler);
     }
 
     destroy(): void {
+        if (this._itemConnectId) {
+            this._item.disconnect(this._itemConnectId);
+        }
+
         this._item.destroy();
     }
 };
 
 export class GnomeMatchMenuItem extends MatchMenuItemRenderer<St.BoxLayout, St.BoxLayout, St.BoxLayout> implements MatchMenuItem<typeof GMatchMenuItem> {
     private _item: GMatchMenuItem;
+    private _itemConnectId?: number;
 
     constructor(properties: MatchMenuItemProperties, r: Renderer<St.BoxLayout, St.BoxLayout, St.BoxLayout>) {
         super(r);
@@ -248,10 +257,14 @@ export class GnomeMatchMenuItem extends MatchMenuItemRenderer<St.BoxLayout, St.B
     }
 
     connect(action: string, handler: () => void): void {
-        this._item.connect(action, handler);
+        this._itemConnectId = this._item.connect(action, handler);
     }
 
     destroy(): void {
+        if (this._itemConnectId) {
+            this._item.disconnect(this._itemConnectId);
+        }
+
         this._item.destroy();
     }
 

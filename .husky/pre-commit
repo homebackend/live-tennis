@@ -1,6 +1,12 @@
 #!/bin/sh
 
-npm run sync || ( echo 'Please review and add changed files to git staging area' 1>&2 && exit 1 )
+GNOME_LOG_FILE=.check.gnome.log
+OUTPUT=$(npm run check:gnome >$GNOME_LOG_FILE 2>&1)
+cat $GNOME_LOG_FILE
+( cat $GNOME_LOG_FILE | tee | grep -qiE '1[0-9]* (finding|error|warning)s' ) && ( echo 'Please fix Gnome code findings/errors/warnings' 1>&2; exit 1 )
+rm -f $GNOME_LOG_FILE
+
+npm run sync || ( echo 'Please review and add changed files to git staging area' 1>&2; exit 1 )
 
 if [ ! -f '.xandroid' ]
 then

@@ -104,6 +104,7 @@ const GObjectLiveScoreButton = GObject.registerClass({
 
 export default class LiveScoreExtension extends Extension implements LiveViewManager {
     private _panelButton?: LiveScoreButton;
+    private _panelButtonHandlerIds: number[] = [];
     private _settings?: GnomeSettings;
     private _updater?: LiveViewUpdater<GnomeTTFetcher>;
     private _cycleIntervalId: NodeJS.Timeout | undefined;
@@ -221,8 +222,10 @@ export default class LiveScoreExtension extends Extension implements LiveViewMan
         const apiHandler = new GnomeApiHandler(this._log.bind(this));
         this._updater = new LiveViewUpdater(this._panelButton.runner, this, apiHandler, this._settings!, this._log.bind(this), GnomeTTFetcher);
 
-        this._panelButton.connect('open-prefs', () => this.openPreferences());
-        this._panelButton.connect('manual-refresh', () => this._updater!.fetchMatchData());
+        const opId = this._panelButton.connect('open-prefs', () => this.openPreferences());
+        const mrId = this._panelButton.connect('manual-refresh', () => this._updater!.fetchMatchData());
+        this._panelButtonHandlerIds.push(opId);
+        this._panelButtonHandlerIds.push(mrId);
 
         ['enabled', 'num-windows', 'selected-matches', 'auto-view-new-matches',
             'match-display-duration', 'enable-atp', 'enable-wta', 'enable-atp-challenger',
@@ -242,6 +245,7 @@ export default class LiveScoreExtension extends Extension implements LiveViewMan
         this.destroyCycleTimeout();
         this.destroyLiveView();
 
+        this._panelButtonHandlerIds.forEach(handlerId => this._panelButton.disconnect(handlerId));
         this._panelButton?.destroy();
         this._panelButton = undefined;
         this._settings = undefined;

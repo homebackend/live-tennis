@@ -21,6 +21,8 @@ export class FloatingScoreWindow extends LiveViewRendererCommon<St.BoxLayout, St
     private _mainBox?: St.BoxLayout;
     private _windowWidth?: number;
     private _windowHeight?: number;
+    private _windowCloseButton?: St.Button;
+    private _windowCloseButtonConnectId?: number;
 
     constructor(windowIndex: number, extensionPath: string, uuid: string, log: (logs: string[]) => void, settings: Settings) {
         const runner = new GnomeRenderer(uuid, extensionPath, log)
@@ -35,9 +37,12 @@ export class FloatingScoreWindow extends LiveViewRendererCommon<St.BoxLayout, St
     private async _setupWindow(): Promise<void> {
         this._windowWidth = await this._settings.getInt('live-window-size-x');
         this._windowHeight = await this._settings.getInt('live-window-size-y');
+        const [closeButton, connectId] = this._closeButton();
+        this._windowCloseButton = closeButton;
+        this._windowCloseButtonConnectId = connectId;
 
         const closeButtonContainer = new St.Bin({
-            child: this._closeButton(),
+            child: this._windowCloseButton,
             y_align: Clutter.ActorAlign.START,
             x_align: Clutter.ActorAlign.END,
             x_expand: true,
@@ -84,7 +89,7 @@ export class FloatingScoreWindow extends LiveViewRendererCommon<St.BoxLayout, St
         this.updatePosition();
     }
 
-    private _closeButton() {
+    private _closeButton(): [St.Button, number] {
         const closeButton = new St.Button({
             style_class: StyleKeys.LiveViewCloseButton,
             reactive: true,
@@ -95,13 +100,13 @@ export class FloatingScoreWindow extends LiveViewRendererCommon<St.BoxLayout, St
             })
         });
 
-        closeButton.connect('clicked', () => {
+        const connectId = closeButton.connect('clicked', () => {
             console.log('Close clicked');
             //this.disable();
             //return true;
         });
 
-        return closeButton;
+        return [closeButton, connectId];
     }
 
     updateContent(match: TennisMatch | undefined) {
@@ -135,6 +140,10 @@ export class FloatingScoreWindow extends LiveViewRendererCommon<St.BoxLayout, St
     }
 
     destroy() {
+        if (this._windowCloseButton && this._windowCloseButtonConnectId) {
+            this._windowCloseButton.disconnect(this._windowCloseButtonConnectId);
+        }
+
         Main.uiGroup.remove_child(this._windowActor);
         if (this._windowActor) {
             this._windowActor.destroy();
