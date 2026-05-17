@@ -1,14 +1,15 @@
 import { TennisEvent, TennisMatch, TennisPlayer, TennisSetScore, TennisTeam } from "./types";
 import { ApiCommonHeaders, ApiHandler, HttpMethods } from "./api";
-import { Fetcher, FetcherProperties } from "./fetcher";
+import { Fetcher, FetcherCommon, FetcherProperties } from "./fetcher";
 
-export class WtaFetcher implements Fetcher {
+export class WtaFetcher extends FetcherCommon implements Fetcher {
     private static wta_all_events_url_template = 'https://api.wtatennis.com/tennis/tournaments/?page=0&pageSize=20&excludeLevels=ITF&from={from-date}&to={to-date}';
     private static wta_event_url_template = 'https://api.wtatennis.com/tennis/tournaments/{event-id}/{year}/matches?from={from-date}&to={to-date}';
 
     private _apiHandler: ApiHandler;
 
     constructor(apiHandler: ApiHandler) {
+        super();
         this._apiHandler = apiHandler;
     }
 
@@ -227,7 +228,7 @@ export class WtaFetcher implements Fetcher {
                 isLive: m['MatchState'] == 'P',
                 displayName: `${team1.displayName} vs ${team2.displayName}`,
                 displayStatus: this._get_match_status(m['MatchState']),
-                displayScore: m['ScoreString'],
+                displayScore: this._formatSetScores(team1.setScores, team2.setScores),
                 url: `${event.url}/scores/${mid}`,
                 h2hUrl: placeholder || isDoubles ? '' : `https://www.wtatennis.com/head-to-head/${team1.players[0].id}/${team2.players[0].id}`,
             };
@@ -307,14 +308,13 @@ export class WtaFetcher implements Fetcher {
     private async _process_events(events: any[]): Promise<TennisEvent[] | undefined> {
         const tennisEvents: TennisEvent[] = [];
 
-        await Promise.all(events.map(async event => {
+        for (const event of events) {
             const tennisEvent = await this._process_event(event);
+
             if (tennisEvent) {
                 tennisEvents.push(tennisEvent);
-            } else {
-                return undefined;
             }
-        }));
+        }
 
         return tennisEvents;
     }

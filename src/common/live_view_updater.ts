@@ -117,10 +117,8 @@ export class LiveViewUpdater<TF extends TTFetcher> {
             this._manager.setFetchTimer(interval, this.fetchMatchData.bind(this));
         } catch (e) {
             this._log(['Error during data fetch', String(e)]);
-            if (e instanceof Error) {
-                if (e.stack) {
-                    this._log(['Stack trace', e.stack]);
-                }
+            if (e instanceof Error && e.stack) {
+                this._log(['Stack trace', e.stack]);
             }
         }
     }

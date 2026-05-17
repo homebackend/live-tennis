@@ -35,7 +35,7 @@ async function loadImage(url: string, uuid: string,
             downloadImage(url, cacheFilePath).then((_: string) => {
                 handler(cacheFilePath);
             }).catch(e => {
-                log(['Error during image downloading: ' + e]);
+                log(['Error during image downloading: ', url, e]);
             });
         }
     } catch (e) {

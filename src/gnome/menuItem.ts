@@ -248,6 +248,10 @@ export class GnomeMatchMenuItem extends MatchMenuItemRenderer<St.BoxLayout, St.B
         return this._item.checked;
     }
 
+    set checked(checked: boolean) {
+        this._item.checked = checked;
+    }
+
     get item(): typeof GMatchMenuItem {
         return this._item;
     }

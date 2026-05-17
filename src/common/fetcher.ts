@@ -28,6 +28,18 @@ export interface Fetcher {
 }
 
 export abstract class FetcherCommon {
+    protected _isValidScore(score: number | string): boolean {
+        if (score === undefined || score === null || score === undefined || score === null) {
+            return false;
+        }
+
+        if (score === "") {
+            return false;
+        }
+
+        return true;
+    }
+
     protected _formatSetScores(team1Scores: TennisSetScore[], team2Scores: TennisSetScore[]): string {
         if (!team1Scores || !team2Scores || team1Scores.length === 0 || team2Scores.length === 0) {
             return '';
@@ -38,7 +50,7 @@ export abstract class FetcherCommon {
             const score1 = team1Scores[i].score;
             const score2 = team2Scores[i].score;
 
-            if (score1 === undefined || score1 === null || score2 === undefined || score2 === null) {
+            if (!this._isValidScore(score1) || !this._isValidScore(score2)) {
                 continue;
             }
 
