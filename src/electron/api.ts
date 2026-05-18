@@ -3,7 +3,7 @@ import { ApiHandler, ApiRequest } from '../common/api';
 
 export class CurlApiHandler implements ApiHandler {
     private _log: (logs: string[]) => void;
-    private _abortController: AbortController | null = null;
+    private _controllers: Set<AbortController> = new Set();
 
     constructor(log: (logs: string[]) => void) {
         this._log = log;
@@ -12,13 +12,8 @@ export class CurlApiHandler implements ApiHandler {
     private async _fetch<T>(request: ApiRequest): Promise<[any, Map<string, string> | undefined]> {
         this._log(['Executing curl command for URL:', request.url]);
 
-        if (this._abortController) {
-            this._log(['Warning: New request started before previous one finished/aborted. Aborting previous.']);
-            this._abortController.abort();
-        }
-
         const currentAbortController = new AbortController();
-        this._abortController = currentAbortController;
+        this._controllers.add(currentAbortController);
 
         return new Promise<[any, Map<string, string> | undefined]>((resolve) => {
             const curlArgs: string[] = ['-X', request.method, request.url];
@@ -66,9 +61,7 @@ export class CurlApiHandler implements ApiHandler {
             });
 
             const cleanup = () => {
-                if (this._abortController === currentAbortController) {
-                    this._abortController = null;
-                }
+                this._controllers.delete(currentAbortController);
             };
 
             currentAbortController.signal.addEventListener('abort', () => {
@@ -113,7 +106,6 @@ export class CurlApiHandler implements ApiHandler {
 
                 if (statusCode >= 200 && statusCode < 300) {
                     this._log(['Received response status:', statusCode.toString()]);
-                    // The generic T expects the raw responseBody if T is string
                     resolve([responseBody as unknown as T, responseCookies]);
                 } else {
                     this._log([`Remote server error: ${statusCode}`, responseBody]);
@@ -150,10 +142,8 @@ export class CurlApiHandler implements ApiHandler {
     }
 
     public abort(): void {
-        if (this._abortController) {
-            this._log(['Aborting previous request via controller signal']);
-            this._abortController.abort();
-            this._abortController = null; // Controller is now used up
-        }
+        this._log(['Aborting all in-flight requests']);
+        this._controllers.forEach(c => c.abort());
+        this._controllers.clear();
     }
 }

@@ -69,9 +69,11 @@ export class WtaFetcher extends FetcherCommon implements Fetcher {
         for (let i = 1; i <= 5; i++) {
             const teamScore = t[`ScoreSet${i}${team}`];
             const otherScore = t[`ScoreSet${i}${other}`];
+            if (teamScore == null && otherScore == null) continue;
+
             setScores.push({
                 score: teamScore,
-                tiebrake: teamScore < otherScore ? t[`ScoreTbSet${i}`] : undefined,
+                tiebrake: (teamScore != null && otherScore != null && Number(teamScore) < Number(otherScore)) ? t[`ScoreTbSet${i}`] : undefined,
                 stats: undefined,
             });
         }
@@ -191,8 +193,8 @@ export class WtaFetcher extends FetcherCommon implements Fetcher {
             headers: ApiCommonHeaders
         });
 
-        if (!jsonData) {
-            return undefined;
+        if (!jsonData?.matches) {
+            return [];
         }
 
         const tennisMatches: TennisMatch[] = [];
@@ -306,17 +308,25 @@ export class WtaFetcher extends FetcherCommon implements Fetcher {
     }
 
     private async _process_events(events: any[]): Promise<TennisEvent[] | undefined> {
-        const tennisEvents: TennisEvent[] = [];
+        const concurrency = 5;
+        const results: TennisEvent[] = [];
+        const queue = [...events];
 
-        for (const event of events) {
-            const tennisEvent = await this._process_event(event);
-
-            if (tennisEvent) {
-                tennisEvents.push(tennisEvent);
+        const workers = Array.from({ length: Math.min(concurrency, events.length) }, async () => {
+            while (queue.length) {
+                const event = queue.shift();
+                if (!event) break;
+                try {
+                    const tennisEvent = await this._process_event(event);
+                    if (tennisEvent) results.push(tennisEvent);
+                } catch {
+                    // ignore individual failures
+                }
             }
-        }
+        });
 
-        return tennisEvents;
+        await Promise.all(workers);
+        return results;
     }
 
     async fetchData(properties: FetcherProperties): Promise<TennisEvent[] | undefined> {
@@ -326,7 +336,7 @@ export class WtaFetcher extends FetcherCommon implements Fetcher {
             headers: ApiCommonHeaders,
         });
 
-        if (!jsonData) {
+        if (!jsonData?.content) {
             return undefined;
         }
 

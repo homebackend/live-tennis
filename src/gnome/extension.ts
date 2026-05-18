@@ -107,7 +107,6 @@ export default class LiveScoreExtension extends Extension implements LiveViewMan
     private _panelButtonHandlerIds: number[] = [];
     private _settings?: GnomeSettings;
     private _updater?: LiveViewUpdater<GnomeTTFetcher>;
-    private _cycleIntervalId: NodeJS.Timeout | undefined;
 
     constructor(metadata: any) {
         super(metadata);
@@ -172,27 +171,22 @@ export default class LiveScoreExtension extends Extension implements LiveViewMan
     }
 
     setCycleTimeout(interval: number, cycler: () => Promise<boolean>): void {
-        if (this._cycleIntervalId) {
-            this.unsetFetchTimer();
-        }
+        this.destroyCycleTimeout();
 
-        this._cycleIntervalId = setInterval(async () => {
-            if (await cycler()) {
-                this.destroyCycleTimeout();
-            }
-        }, 1000 * interval);
-
-        //_matchCycleTimeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, interval, cycler);
+        _matchCycleTimeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, interval, () => {
+            cycler().then(shouldStop => {
+                if (shouldStop) {
+                    this.destroyCycleTimeout();
+                }
+            }).catch(e => this._log(['cycle error', String(e)]));
+            return GLib.SOURCE_CONTINUE;
+        });
     }
 
     destroyCycleTimeout(): void {
         if (_matchCycleTimeout) {
             GLib.source_remove(_matchCycleTimeout);
             _matchCycleTimeout = null;
-        }
-
-        if (this._cycleIntervalId) {
-            clearInterval(this._cycleIntervalId);
         }
     }
 

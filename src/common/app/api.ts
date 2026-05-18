@@ -3,7 +3,7 @@ import { ApiHandler, ApiRequest } from '../api';
 
 export class AxiosApiHandler implements ApiHandler {
     private _log: (logs: string[]) => void;
-    private _cancelSignal: AbortController | null = null;
+    private _controllers: Set<AbortController> = new Set();
 
     constructor(log: (logs: string[]) => void) {
         this._log = log;
@@ -12,19 +12,14 @@ export class AxiosApiHandler implements ApiHandler {
     private async _fetch(request: ApiRequest): Promise<[any, Map<string, string> | undefined]> {
         this._log(['Fetching url', request.url]);
 
-        if (this._cancelSignal) {
-            this._cancelSignal.abort('New request started before previous one finished');
-        }
-
         const abortController = new AbortController();
-        this._cancelSignal = abortController;
+        this._controllers.add(abortController);
 
         const requestConfig: AxiosRequestConfig = {
             url: request.url,
             method: request.method,
             timeout: 60000,
             signal: abortController.signal,
-            //data: request.payload ? qs.stringify(Object.fromEntries(request.payload)) : undefined,
             data: request.payload ? Array.from(request.payload.entries()).map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(JSON.stringify(value))}`).join('&') : undefined,
         };
 
@@ -70,7 +65,7 @@ export class AxiosApiHandler implements ApiHandler {
                 return [response.data, responseCookies];
             } else {
                 this._log([`Remote server error: ${response.status}`, JSON.stringify(response.data)]);
-                return [null, responseCookies]; // Return null data on error
+                return [null, responseCookies];
             }
 
         } catch (error) {
@@ -86,9 +81,7 @@ export class AxiosApiHandler implements ApiHandler {
             }
             return [null, undefined];
         } finally {
-            if (this._cancelSignal === abortController) {
-                this._cancelSignal = null;
-            }
+            this._controllers.delete(abortController);
         }
     }
 
@@ -108,10 +101,8 @@ export class AxiosApiHandler implements ApiHandler {
     }
 
     public abort(): void {
-        if (this._cancelSignal) {
-            this._log(['Aborting previous request']);
-            this._cancelSignal.abort();
-            this._cancelSignal = null;
-        }
+        this._log(['Aborting all in-flight requests']);
+        this._controllers.forEach(c => c.abort());
+        this._controllers.clear();
     }
 }
