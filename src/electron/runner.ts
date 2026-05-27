@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { app, BrowserWindow, ipcMain, Point, Rectangle, screen, Tray } from "electron";
+import { BrowserWindow, ipcMain, Point, Rectangle, screen, Tray } from "electron";
 import { Runner } from "../common/runner";
 import { Settings } from "../common/settings";
 import { TennisEvent, TennisMatch } from "../common/types";
@@ -20,6 +20,7 @@ export class ElectronRunner extends Runner {
         super(log, settings, basePath);
 
         const preloadPath = path.join(basePath, 'menu_preload.js');
+        const isDev = process.env.NODE_ENV === 'development';
 
         this._customMenu = new BrowserWindow({
             width: ElectronRunner.DefaultWindowWidth,
@@ -31,7 +32,7 @@ export class ElectronRunner extends Runner {
                 preload: preloadPath,
                 contextIsolation: true,
                 nodeIntegration: false,
-                additionalArguments: [`--is-packaged=${app.isPackaged ? "true" : "false"}`]
+                additionalArguments: [`--is-dev=${isDev ? "true" : "false"}`]
             },
         });
         this._tray = new Tray(this.getIconPath());

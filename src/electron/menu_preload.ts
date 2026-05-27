@@ -4,7 +4,7 @@ import { MenuRenderKeys } from "./render_keys";
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPIMenu', {
-    isDev: process.argv.includes('--is-packaged=true'),
+    isDev: process.argv.includes('--is-dev=true'),
     openSettingsWindow: (): void => ipcRenderer.send(MenuRenderKeys.openSettingsWindow),
     openDevTools: (): void => ipcRenderer.send(MenuRenderKeys.openDevTools),
     log: (log: string[]): void => ipcRenderer.send(MenuRenderKeys.log, log),

@@ -1,6 +1,6 @@
 {
   "name": "live-tennis",
-  "version": "5.0.4",
+  "version": "5.0.5",
   "description": "Application to show live ATP and WTA tennis match scores and data",
   "homepage": "https://github.com/homebackend/gnome-live-tennis#readme",
   "bugs": {
@@ -22,7 +22,7 @@
     "sync": "node sync.js",
     "build": "node esbuild.js",
     "start": "npm run start:electron",
-    "start:electron": "npm run build && electron .",
+    "start:electron": "npm run build && cross-env NODE_ENV=development electron .",
     "start:metro": "cd react-native-app && npm run start",
     "start:android": "cd react-native-app && npx react-native run-android",
     "start:android:emulator": "cd /opt/android-sdk/tools && emulator -avd $(emulator -list-avds | head -1)",
@@ -61,6 +61,7 @@
     "@types/auto-launch": "^5.0.5",
     "@types/electron": "^1.4.38",
     "@types/qs": "^6.14.0",
+    "cross-env": "^10.1.0",
     "electron": "^38.6.0",
     "electron-builder": "^26.0.12",
     "esbuild": "^0.25.10",
