@@ -4,11 +4,14 @@ import { TennisEvent, TennisMatch } from '../common/types';
 import { ElectronCheckedMenuItem, ElectronLinkMenuItem, ElectronMatchMenuItem, ElectronPopupSubMenuItem } from './menuitem';
 import { ElectronRenderer } from './renderer';
 import { AppMenuRenderer } from '../common/app/menu_renderer';
+import { StyleKeys } from 'src/common/style_keys';
 
 declare global {
     interface Window {
         electronAPIMenu: {
+            isDev: boolean,
             openSettingsWindow(): void;
+            openDevTools(): void;
             log(log: string[]): void;
             basePath(): Promise<string>;
             uniqMatchId(event: TennisEvent, match: TennisMatch): Promise<string>;
@@ -32,6 +35,7 @@ declare global {
             onSetMatchSelection: (callback: (matchId: string, selection: boolean) => void) => void;
             onRemoveEventMenuItem: (callback: (event: TennisEvent) => void) => void;
             onRemoveMatchMenuItem: (callback: (matchId: string) => void) => void;
+            onUpdateFetchStatuses: (callback: (statuses: Map<string, boolean>) => void) => void;
         };
     }
 }
@@ -105,11 +109,31 @@ class MenuRenderer extends AppMenuRenderer<HTMLDivElement, HTMLSpanElement, HTML
         setTimeout(resizeWindowToFitContent, 50);
     }
 
+    updateFetchStatusText(statusText: string): void {
+        if (this.statusText) {
+            this.statusText.textContent = statusText;
+        }
+    }
+
     addRefreshMenuItem(): void {
         const [refreshDiv, refreshTimeSpan] = this.getRefreshMenuItem('Never');
         this._refreshTimeSpan = refreshTimeSpan;
         const r = this._renderer;
         r.addContainersToContainer(this.otherContainer, refreshDiv);
+    }
+
+    setupAdditionalMenuItems(): void {
+        super.setupAdditionalMenuItems();
+        if (window.electronAPIMenu.isDev) {
+            this.addMenuSeprator();
+            const r = this._renderer;
+            r.addTextToContainer(this.otherContainer, {
+                text: 'Open Dev Menu',
+                xExpand: true,
+                className: StyleKeys.MainMenuMatchItem,
+                onClick: () => window.electronAPIMenu.openDevTools(),
+            })
+        }
     }
 
     protected refresh(): void {
@@ -147,6 +171,7 @@ async function renderMenu() {
     window.electronAPIMenu.onSetMatchSelection((matchId: string, selection: boolean) => menuRenderer.setMatchSelection(matchId, selection));
     window.electronAPIMenu.onRemoveEventMenuItem((event: TennisEvent) => menuRenderer.removeEventMenuItem(event));
     window.electronAPIMenu.onRemoveMatchMenuItem((matchId: string) => menuRenderer.removeMatchMenuItem(matchId));
+    window.electronAPIMenu.onUpdateFetchStatuses((statuses: Map<string, boolean>) => menuRenderer.updateFetchStatuses(statuses));
 
     window.electronAPIMenu.refresh();
 }

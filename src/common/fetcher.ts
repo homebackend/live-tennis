@@ -113,11 +113,11 @@ export class LiveTennis {
         this._settings = settings;
     }
 
-    private async _process(tourData: TourData): Promise<[StringToTennisEventMap, StringToTennisEventMap | undefined]> {
+    private async _process(tourData: TourData): Promise<[string, StringToTennisEventMap, StringToTennisEventMap | undefined]> {
         const oldEventsMap = tourData.eventMap;
         if (await this._settings.getBoolean(`enable-${tourData.settingKey}`)) {
             if (tourData.lock) {
-                return [oldEventsMap, oldEventsMap];
+                return [tourData.settingKey, oldEventsMap, oldEventsMap];
             }
 
             tourData.lock = true;
@@ -125,15 +125,15 @@ export class LiveTennis {
             tourData.lock = false;
             if (!newEvents) {
                 this._log([`Fetch received no data`]);
-                return [oldEventsMap, undefined];
+                return [tourData.settingKey, oldEventsMap, undefined];
             }
 
             const newEventsMap: StringToTennisEventMap = {};
             tourData.eventMap = newEventsMap;
             newEvents.forEach(e => newEventsMap[e.id] = e);
-            return [oldEventsMap, newEventsMap];
+            return [tourData.settingKey, oldEventsMap, newEventsMap];
         } else {
-            return [oldEventsMap, undefined];
+            return ['', oldEventsMap, undefined];
         }
     }
 
@@ -141,60 +141,67 @@ export class LiveTennis {
         return promise.then(data => ({ id, data }));
     }
 
-    async *query(): AsyncGenerator<[QueryResponseType, TennisEvent, TennisMatch?], boolean, void> {
-        const pendingPromises = new Map<number, Promise<{ id: number, data: [StringToTennisEventMap, StringToTennisEventMap | undefined] }>>();
+    async *query(): AsyncGenerator<[QueryResponseType, TennisEvent, TennisMatch?], [boolean, Map<string, boolean>], void> {
+        const pendingPromises = new Map<number, Promise<{ id: number, data: [string, StringToTennisEventMap, StringToTennisEventMap | undefined] }>>();
         this._tourData.forEach(tourData => {
             const size = pendingPromises.size;
             pendingPromises.set(size, this._trackPromise(this._process(tourData), size));
         })
 
         let failed = false;
+        const statuses = new Map<string, boolean>();
 
         while (pendingPromises.size > 0) {
             const { id, data } = await Promise.race(Array.from(pendingPromises.values()));
 
             if (data) {
-                const [oldEventsMap, newEventsMap] = data;
+                const [settingsKey, oldEventsMap, newEventsMap] = data;
                 // If both old and new objects are same: this means a query is already in progress
                 // so we do nothing and yield nothing, but mark request as failed since that will
                 // prevent old event/match cleanup elsewhere in the code.
-                if (oldEventsMap === newEventsMap) {
-                    failed = true;
-                } else {
-                    if (newEventsMap) {
-                        for (const [eventId, oldEvent] of Object.entries(oldEventsMap)) {
-                            if (!(eventId in newEventsMap)) {
-                                yield [QueryResponseType.DeleteTournament, oldEvent];
-                            } else {
-                                const newEvent = newEventsMap[eventId];
-                                for (const [matchId, oldMatch] of Object.entries(oldEvent.matchMapping)) {
-                                    if (!(matchId in newEvent.matchMapping)) {
-                                        yield [QueryResponseType.DeleteMatch, oldEvent, oldMatch];
-                                    }
-                                }
-                            }
-                        }
-
-                        for (const [eventId, newEvent] of Object.entries(newEventsMap)) {
-                            if (!(eventId in oldEventsMap)) {
-                                yield [QueryResponseType.AddTournament, newEvent];
-                                for (const match of newEvent.matches) {
-                                    yield [QueryResponseType.AddMatch, newEvent, match];
-                                }
-                            } else {
-                                yield [QueryResponseType.UpdateTournament, newEvent];
-                                const oldEvent = oldEventsMap[eventId];
-                                for (const [matchId, newMatch] of Object.entries(newEvent.matchMapping)) {
-                                    if (!(matchId in oldEvent.matchMapping)) {
-                                        yield [QueryResponseType.AddMatch, newEvent, newMatch];
-                                    } else {
-                                        yield [QueryResponseType.UpdateMatch, newEvent, newMatch];
-                                    }
-                                }
-                            }
-                        }
-                    } else {
+                if (settingsKey) {
+                    if (oldEventsMap === newEventsMap) {
+                        statuses.set(settingsKey, true);
                         failed = true;
+                    } else {
+                        if (newEventsMap) {
+                            for (const [eventId, oldEvent] of Object.entries(oldEventsMap)) {
+                                if (!(eventId in newEventsMap)) {
+                                    yield [QueryResponseType.DeleteTournament, oldEvent];
+                                } else {
+                                    const newEvent = newEventsMap[eventId];
+                                    for (const [matchId, oldMatch] of Object.entries(oldEvent.matchMapping)) {
+                                        if (!(matchId in newEvent.matchMapping)) {
+                                            yield [QueryResponseType.DeleteMatch, oldEvent, oldMatch];
+                                        }
+                                    }
+                                }
+                            }
+
+                            for (const [eventId, newEvent] of Object.entries(newEventsMap)) {
+                                if (!(eventId in oldEventsMap)) {
+                                    yield [QueryResponseType.AddTournament, newEvent];
+                                    for (const match of newEvent.matches) {
+                                        yield [QueryResponseType.AddMatch, newEvent, match];
+                                    }
+                                } else {
+                                    yield [QueryResponseType.UpdateTournament, newEvent];
+                                    const oldEvent = oldEventsMap[eventId];
+                                    for (const [matchId, newMatch] of Object.entries(newEvent.matchMapping)) {
+                                        if (!(matchId in oldEvent.matchMapping)) {
+                                            yield [QueryResponseType.AddMatch, newEvent, newMatch];
+                                        } else {
+                                            yield [QueryResponseType.UpdateMatch, newEvent, newMatch];
+                                        }
+                                    }
+                                }
+                            }
+
+                            statuses.set(settingsKey, true);
+                        } else {
+                            statuses.set(settingsKey, false);
+                            failed = true;
+                        }
                     }
                 }
             } else {
@@ -204,7 +211,7 @@ export class LiveTennis {
             pendingPromises.delete(id);
         }
 
-        return failed;
+        return [failed, statuses];
     }
 
     disable() {

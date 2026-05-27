@@ -1,5 +1,6 @@
 export const MenuRenderKeys = {
     openSettingsWindow: 'open-settings-window',
+    openDevTools: 'open-dev-tools',
     log: 'log',
     basePath: 'basePath',
     uniqMatchId: 'uniq-match-id',
@@ -20,6 +21,7 @@ export const MenuRenderKeys = {
     setMatchSelection: 'set-match-selection',
     removeEventMenuItem: 'remove-event-menu-item',
     removeMatchMenuItem: 'remove-match-menu-item',
+    updateFetchStatuses: 'update-fetch-statuses',
     resizeToFitContents: 'menu-resize-to-fit-contents',
 };
 

@@ -18,6 +18,8 @@ export interface MenuHandler {
     addItemToMenu(item: typeof GCheckedMenuItem): void;
     addRefreshMenuItem(): St.Label;
     addSettingsItem(): void;
+    addDataFetchStatusContainer(): void;
+    updateFetchStatusText(statusText: string): void;
 }
 
 
@@ -66,6 +68,14 @@ export class GnomeRunner extends MenuRendererCommon<St.BoxLayout, St.BoxLayout, 
 
     addSettingsItem(): void {
         this._extension.addSettingsItem();
+    }
+
+    addDataFetchStatusContainer(): void {
+        this._extension.addDataFetchStatusContainer();
+    }
+
+    updateFetchStatusText(statusText: string): void {
+        this._extension.updateFetchStatusText(statusText);
     }
 
     setupAdditionalMenuItems(): void {

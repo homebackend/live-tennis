@@ -1,5 +1,5 @@
 import { ReactElementGenerator, RNElement } from './renderer';
-import { CheckedMenuItem, CheckedMenuItemProperties, LinkMenuItemProperties, MatchMenuItemProperties, MatchMenuItemRenderer, MenuItem, PopubSubMenuItemProperties, PopupSubMenuItem } from '../../src/common/menuitem';
+import { CheckedMenuItem, CheckedMenuItemProperties, LinkMenuItemProperties, MatchMenuItem, MatchMenuItemProperties, MatchMenuItemRenderer, MenuItem, PopubSubMenuItemProperties, PopupSubMenuItem } from '../../src/common/menuitem';
 import { getCheckedMenuItem, getLinkMenuItem, getPopupSubMenuItem } from '../../src/common/app/menuitem';
 import { useState } from 'react';
 import { Renderer } from '../../src/common/renderer';
@@ -51,13 +51,13 @@ export class RNPopupSubMenuItem implements PopupSubMenuItem<ReactElementGenerato
     }
 
     addMenuItem(item: MenuItem<ReactElementGenerator>): void {
-        if (item instanceof CheckedMenuItemCommon) {
+        if (item instanceof RNCheckedMenuItemCommon) {
             item.parent = this;
         }
         this._menuItems.push(item);
     }
 
-    removeMenuItem(item: CheckedMenuItemCommon): void {
+    removeMenuItem(item: RNCheckedMenuItemCommon): void {
         this._menuItems = this._menuItems.filter(i => i !== item);
     }
 
@@ -91,7 +91,7 @@ export class RNLinkMenuItem implements MenuItem<ReactElementGenerator> {
     }
 }
 
-abstract class CheckedMenuItemCommon extends MatchMenuItemRenderer<RNElement, RNElement, RNElement> implements CheckedMenuItem<ReactElementGenerator> {
+abstract class RNCheckedMenuItemCommon extends MatchMenuItemRenderer<RNElement, RNElement, RNElement> implements CheckedMenuItem<ReactElementGenerator> {
     private _checked: boolean;
     private _clickHandler?: (checked: boolean) => void;
     private _parent?: RNPopupSubMenuItem;
@@ -138,7 +138,7 @@ abstract class CheckedMenuItemCommon extends MatchMenuItemRenderer<RNElement, RN
     }
 }
 
-export class RNCheckedMenuItem extends CheckedMenuItemCommon {
+export class RNCheckedMenuItem extends RNCheckedMenuItemCommon {
     private _properties: CheckedMenuItemProperties;
 
     constructor(properties: CheckedMenuItemProperties, r: Renderer<RNElement, RNElement, RNElement>) {
@@ -151,7 +151,7 @@ export class RNCheckedMenuItem extends CheckedMenuItemCommon {
     }
 }
 
-export class RNMatchMenuItem extends CheckedMenuItemCommon {
+export class RNMatchMenuItem extends RNCheckedMenuItemCommon implements MatchMenuItem<ReactElementGenerator> {
     private _match: TennisMatch;
     private _setMatch?: React.Dispatch<React.SetStateAction<TennisMatch>>;
 

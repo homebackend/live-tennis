@@ -8,7 +8,6 @@ import { TennisMatch } from '../common/types';
 import { CheckedMenuItem, CheckedMenuItemProperties, LinkMenuItemProperties, MatchMenuItem, MatchMenuItemProperties, MatchMenuItemRenderer, MenuItem, PopubSubMenuItemProperties, PopupSubMenuItem } from '../common/menuitem';
 import { loadPopupMenuGicon } from './image_loader';
 import { Renderer } from '../common/renderer';
-import { GnomeRenderer } from './renderer';
 import { StyleKeys } from '../common/style_keys';
 
 export const GCheckedMenuItem = GObject.registerClass({

@@ -4,6 +4,13 @@ import { Runner } from "./runner";
 import { Settings } from "./settings";
 import { TennisEvent, TennisMatch } from "./types";
 
+const TourMappings = new Map<string, string>([
+    ["atp", "ATP"],
+    ["wta", "WTA"],
+    ["atp-challenger", "ATP Challenger"],
+    ["tennis-temple", "Tennis Temple"],
+]);
+
 export abstract class MenuRendererCommon<T, TT, IT, PI, LI, CI, MI, E extends PopupSubMenuItem<PI, LI | CI | MI>,
     L extends MenuItem<LI>, C extends CheckedMenuItem<CI>, M extends MatchMenuItem<MI>> extends Runner {
     private _EConstructor: new (properties: PopubSubMenuItemProperties, renderer: Renderer<T, TT, IT>) => E;
@@ -42,9 +49,11 @@ export abstract class MenuRendererCommon<T, TT, IT, PI, LI, CI, MI, E extends Po
     abstract setLastRefrestTimeText(text: string): void;
     abstract addMenuSeprator(): void;
     abstract addItemToMenu(item: C): void;
+    abstract addDataFetchStatusContainer(): void;
     abstract addRefreshMenuItem(): void;
     abstract addSettingsItem(): void;
     abstract setupAdditionalMenuItems(): void;
+    abstract updateFetchStatusText(statusText: string): void;
 
     handleMenuHidden(): void {
         Array.from(this._tournamentHeaders.values()).forEach(element => element.hide());
@@ -156,6 +165,28 @@ export abstract class MenuRendererCommon<T, TT, IT, PI, LI, CI, MI, E extends Po
         }
     }
 
+    updateFetchStatuses(statuses: Map<string, boolean>): void {
+        let statusText: string[] = [];
+        statuses.forEach((status, key) => {
+            let text = '';
+            if (status) {
+                text = '🟢';
+            } else {
+                text = '🔴';
+            }
+            text += ' ';
+            TourMappings.forEach((v, k) => {
+                if (k == key) {
+                    text += v;
+                }
+            });
+            statusText.push(text);
+        });
+
+        statusText.reverse();
+        this.updateFetchStatusText(statusText.join("•❖•"));
+    }
+
     async setupBaseMenu(): Promise<void> {
         this.addMenuSeprator();
 
@@ -167,6 +198,7 @@ export abstract class MenuRendererCommon<T, TT, IT, PI, LI, CI, MI, E extends Po
         }, this._renderer);
         this.addItemToMenu(enableLiveViewItem);
         this.addMenuSeprator();
+        this.addDataFetchStatusContainer();
         this.addRefreshMenuItem();
         this.addMenuSeprator();
         this.addSettingsItem();

@@ -1,0 +1,138 @@
+@startuml
+!theme vibrant
+
+skinparam class {
+    BackgroundColor LightGray
+    BackgroundColor<<Gnome>> #E2F0D9
+    BorderColor<<Gnome>> #385723
+    BackgroundColor<<Electron>> #DDEBF7
+    BorderColor<<Electron>> #1F4E78
+    BackgroundColor<<RN>> #FFF2CC
+    BorderColor<<RN>> #833C0C
+}
+
+skinparam interface {
+    BackgroundColor<<Gnome>> #E2F0D9
+    BorderColor<<Gnome>> #385723
+    BackgroundColor<<Electron>> #DDEBF7
+    BorderColor<<Electron>> #1F4E78
+    BackgroundColor<<RN>> #FFF2CC
+    BorderColor<<RN>> #833C0C
+}
+
+abstract class Runner
+abstract class MenuRendererCommon {
+  Used to draw main menu items
+}
+abstract class AppMenuRenderer
+interface LiveViewManager
+class LiveViewUpdater
+abstract class Renderer
+abstract class LiveViewRendererCommon
+interface PopupSubMenuItem
+interface MenuItem
+interface CheckedMenuItem
+interface MatchMenuItem
+abstract class MatchMenuItemRenderer
+
+interface MenuHandler <<Gnome>>
+class GnomeRunner <<Gnome>>
+class LiveScoreButton <<Gnome>> {
+  Gnome PanelMenu.Button
+}
+class LiveScoreExtension <<Gnome>> {
+  Gnome Extension
+}
+class GnomeRenderer <<Gnome>>
+class FloatingScoreWindow <<Gnome>>
+class GnomePopupSubMenuItem <<Gnome>>
+class GnomeLinkMenuItem <<Gnome>>
+class GnomeCheckedMenuItem <<Gnome>>
+class GnomeMatchMenuItem <<Gnome>>
+
+class MenuRenderer <<Electron>>
+class ElectronLiveViewManager <<Electron>>
+class LiveViewRenderer <<Electron>>
+class ElectronRenderer <<Electron>>
+class ElectronPopupSubMenuItem <<Electron>>
+class ElectronLinkMenuItem <<Electron>>
+abstract class ElectronCheckedMenuItemCommon <<Electron>>
+class ElectronCheckedMenuItem <<Electron>>
+class ElectronMatchMenuItem <<Electron>>
+
+class RNRunner <<RN>>
+class RNLiveViewManager <<RN>>
+class RNLiveViewRenderer <<RN>>
+class RNRenderer <<RN>>
+class RNPopupSubMenuItem <<RN>>
+class RNLinkMenuItem <<RN>>
+abstract class RNCheckedMenuItemCommon <<RN>>
+class RNCheckedMenuItem <<RN>>
+class RNMatchMenuItem <<RN>>
+
+Runner <|-- MenuRendererCommon
+MenuRendererCommon <|-- GnomeRunner
+MenuRendererCommon <|-- AppMenuRenderer
+AppMenuRenderer <|-- MenuRenderer
+AppMenuRenderer <|-- RNRunner
+MenuHandler <|.. LiveScoreButton
+MenuHandler *-- GnomeRunner: _extension
+LiveScoreButton *-- LiveScoreExtension: _panelButton
+LiveScoreExtension --> LiveViewUpdater: _updater
+LiveScoreExtension *-- FloatingScoreWindow: _activeFloatingWindows
+LiveViewUpdater --> LiveViewManager: _manager
+
+MenuRendererCommon *-- MenuItem
+MenuRendererCommon *-- CheckedMenuItem
+MenuRendererCommon *-- MatchMenuItem
+MenuRendererCommon *-- PopupSubMenuItem
+
+LiveViewManager <|.. LiveScoreExtension
+LiveViewManager <|.. RNLiveViewManager
+LiveViewManager <|.. ElectronLiveViewManager
+
+Renderer <|-- RNRenderer
+Renderer <|-- ElectronRenderer
+Renderer <|-- GnomeRenderer
+
+LiveViewRendererCommon <|-- RNLiveViewRenderer
+LiveViewRendererCommon <|-- LiveViewRenderer
+LiveViewRendererCommon <|-- FloatingScoreWindow
+
+MenuItem <|-- CheckedMenuItem
+MenuItem <|.. GnomeLinkMenuItem
+MenuItem <|.. RNLinkMenuItem
+MenuItem <|.. ElectronLinkMenuItem
+
+CheckedMenuItem <|.. GnomeCheckedMenuItem
+CheckedMenuItem <|-- MatchMenuItem
+CheckedMenuItem <|.. PopupSubMenuItem
+CheckedMenuItem <|.. ElectronCheckedMenuItemCommon
+CheckedMenuItem <|.. RNCheckedMenuItemCommon
+
+PopupSubMenuItem <|.. GnomePopupSubMenuItem
+PopupSubMenuItem <|.. RNPopupSubMenuItem
+PopupSubMenuItem <|.. ElectronPopupSubMenuItem
+
+MatchMenuItemRenderer <|-- GnomeMatchMenuItem
+MatchMenuItemRenderer <|-- RNCheckedMenuItemCommon
+MatchMenuItemRenderer <|-- ElectronCheckedMenuItemCommon
+
+MatchMenuItem <|.. GnomeMatchMenuItem
+MatchMenuItem <|.. RNMatchMenuItem
+MatchMenuItem <|.. ElectronMatchMenuItem
+
+RNCheckedMenuItemCommon <|-- RNCheckedMenuItem
+RNCheckedMenuItemCommon <|-- RNMatchMenuItem
+
+ElectronCheckedMenuItemCommon <|-- ElectronCheckedMenuItem
+ElectronCheckedMenuItemCommon <|-- ElectronMatchMenuItem
+
+GnomeRunner --> GnomeRenderer
+FloatingScoreWindow --> GnomeRenderer
+RNRunner --> RNRenderer
+RNLiveViewRenderer --> RNRenderer
+MenuRenderer --> ElectronRenderer
+LiveViewRenderer --> ElectronRenderer
+
+@enduml

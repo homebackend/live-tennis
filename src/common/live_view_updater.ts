@@ -101,17 +101,17 @@ export class LiveViewUpdater<TF extends TTFetcher> {
                 result = await generator.next();
             }
 
-            const allGood = result.value;
+            const [allGood, statuses] = result.value;
             if (allGood) {
                 // Only remove stale entries if API call(s) were success
                 await this._runner.filterAutoEvents(id => eventIds.has(id));
                 await this._runner.filterLiveViewMatches(id => matchIds.has(id));
             }
+            this._runner.updateFetchStatuses(statuses);
 
             this._currentMatchesData = matchesData;
             await this._updateFloatingWindows(this._currentMatchesData);
             this._runner.setLastRefreshTime(Date.now());
-            this._runner.setUpdateStatus(allGood);
 
             const interval = await this._settings!.getInt('update-interval');
             this._manager.setFetchTimer(interval, this.fetchMatchData.bind(this));

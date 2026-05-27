@@ -69,7 +69,7 @@ app.whenReady().then(() => {
 
             ['enabled', 'num-windows', 'selected-matches', 'auto-view-new-matches',
                 'match-display-duration', 'enable-atp', 'enable-wta', 'enable-atp-challenger',
-                'auto-hide-no-live-matches']
+                'enable-tennis-temple', 'auto-hide-no-live-matches']
                 .forEach(k => {
                     if (k == key) {
                         updater.updateUI();

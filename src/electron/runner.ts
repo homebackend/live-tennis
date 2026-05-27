@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { BrowserWindow, ipcMain, Point, Rectangle, screen, Tray } from "electron";
+import { app, BrowserWindow, ipcMain, Point, Rectangle, screen, Tray } from "electron";
 import { Runner } from "../common/runner";
 import { Settings } from "../common/settings";
 import { TennisEvent, TennisMatch } from "../common/types";
@@ -9,6 +9,7 @@ export class ElectronRunner extends Runner {
     private static DefaultWindowWidth = 650;
     private static DefaultWindowHeight = 600;
 
+    private _devToolsOpen = false;
     private _eventIds = new Set<string>();
     private _matchIds = new Set<string>();
     private _selectedMatchIds = new Set<string>();
@@ -30,6 +31,7 @@ export class ElectronRunner extends Runner {
                 preload: preloadPath,
                 contextIsolation: true,
                 nodeIntegration: false,
+                additionalArguments: [`--is-packaged=${app.isPackaged ? "true" : "false"}`]
             },
         });
         this._tray = new Tray(this.getIconPath());
@@ -69,6 +71,15 @@ export class ElectronRunner extends Runner {
     private _setupIpc(): void {
         ipcMain.handle(MenuRenderKeys.uniqMatchId, (_, event: TennisEvent, match: TennisMatch) => this.uniqMatchId(event, match));
         ipcMain.on(MenuRenderKeys.setMatchSelected, (_, matchId: string) => this._selectedMatchIds.add(matchId));
+        ipcMain.on(MenuRenderKeys.openDevTools, () => {
+            console.log(this._devToolsOpen);
+            if (this._devToolsOpen) {
+                this._customMenu.webContents.closeDevTools();
+            } else {
+                this._customMenu!.webContents.openDevTools();
+            }
+            this._devToolsOpen = !this._devToolsOpen;
+        });
     }
 
     private _showMenu(bounds: Rectangle, position: Point) {
@@ -154,6 +165,10 @@ export class ElectronRunner extends Runner {
 
     removeMatchMenuItem(matchId: string): void {
         this._customMenu.webContents.send(MenuRenderKeys.removeMatchMenuItem, matchId);
+    }
+
+    updateFetchStatuses(statuses: Map<string, boolean>): void {
+        this._customMenu.webContents.send(MenuRenderKeys.updateFetchStatuses, statuses);
     }
 
     destroy(): void {

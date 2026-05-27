@@ -4,8 +4,9 @@ import { MenuRenderKeys } from "./render_keys";
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPIMenu', {
-
+    isDev: process.argv.includes('--is-packaged=true'),
     openSettingsWindow: (): void => ipcRenderer.send(MenuRenderKeys.openSettingsWindow),
+    openDevTools: (): void => ipcRenderer.send(MenuRenderKeys.openDevTools),
     log: (log: string[]): void => ipcRenderer.send(MenuRenderKeys.log, log),
     basePath: () => ipcRenderer.invoke(MenuRenderKeys.basePath),
     uniqMatchId: (event: TennisEvent, match: TennisMatch) => ipcRenderer.invoke(MenuRenderKeys.uniqMatchId, event, match),
@@ -28,4 +29,5 @@ contextBridge.exposeInMainWorld('electronAPIMenu', {
     onSetMatchSelection: (callback: any) => ipcRenderer.on(MenuRenderKeys.setMatchSelection, (_, ...args) => callback(...args)),
     onRemoveEventMenuItem: (callback: any) => ipcRenderer.on(MenuRenderKeys.removeEventMenuItem, (_, ...args) => callback(...args)),
     onRemoveMatchMenuItem: (callback: any) => ipcRenderer.on(MenuRenderKeys.removeMatchMenuItem, (_, ...args) => callback(...args)),
+    onUpdateFetchStatuses: (callback: any) => ipcRenderer.on(MenuRenderKeys.updateFetchStatuses, (_, ...args) => callback(...args)),
 });

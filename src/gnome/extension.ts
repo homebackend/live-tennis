@@ -32,6 +32,7 @@ class LiveScoreButton extends PanelMenu.Button implements MenuHandler {
     private _settings: Settings;
     private _extensionPath: string;
     private _uuid: string;
+    private _statusLable?: St.Label;
     public runner: GnomeRunner;
 
     constructor(log: (logs: string[]) => void, settings: Settings, extensionPath: string, uuid: string) {
@@ -84,6 +85,24 @@ class LiveScoreButton extends PanelMenu.Button implements MenuHandler {
         this.menu.addMenuItem(refreshItem);
 
         return refreshLabel;
+    }
+
+    addDataFetchStatusContainer(): void {
+        const statusItem = new PopupMenu.PopupMenuItem('', { reactive: true });
+        statusItem.connect('activate', () => {
+            this.emit('manual-refresh');
+        });
+        const statusLabel = new St.Label({ style_class: StyleKeys.MainMenuRefreshLabel });
+        statusLabel.clutter_text.set_markup('⌛');
+        statusItem.actor.add_child(statusLabel);
+        this.menu.addMenuItem(statusItem);
+        this._statusLable = statusLabel;
+    }
+
+    updateFetchStatusText(statusText: string): void {
+        if (this._statusLable) {
+            this._statusLable.clutter_text.set_markup(statusText);
+        }
     }
 
     addSettingsItem(): void {
@@ -223,7 +242,7 @@ export default class LiveScoreExtension extends Extension implements LiveViewMan
 
         ['enabled', 'num-windows', 'selected-matches', 'auto-view-new-matches',
             'match-display-duration', 'enable-atp', 'enable-wta', 'enable-atp-challenger',
-            'auto-hide-no-live-matches']
+            'enable-tennis-temple', 'auto-hide-no-live-matches']
             .forEach(k => settings.connect(`changed::${k}`, () => this._updater!.updateUI()));
         ['live-window-size-x', 'live-window-size-y'].forEach(k => settings.connect(`changed::${k}`, () => this._recreateUI()))
 

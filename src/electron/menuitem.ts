@@ -1,7 +1,6 @@
 import { CheckedMenuItem, CheckedMenuItemProperties, LinkMenuItemProperties, MatchMenuItem, MatchMenuItemProperties, MatchMenuItemRenderer, MenuItem, PopubSubMenuItemProperties, PopupSubMenuItem } from "../common/menuitem";
 import { Renderer } from "../common/renderer";
 import { TennisMatch } from "../common/types";
-import { ElectronRenderer } from "./renderer";
 import { StyleKeys } from "../common/style_keys";
 import { getCheckedMenuItem, getLinkMenuItem, getPopupSubMenuItem, TextMenuClosed, TextMenuOpen } from "../common/app/menuitem";
 
@@ -75,7 +74,7 @@ export class ElectronLinkMenuItem implements MenuItem<HTMLDivElement> {
     }
 }
 
-class CheckedMenuItemCommon extends MatchMenuItemRenderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement> implements CheckedMenuItem<HTMLDivElement> {
+abstract class ElectronCheckedMenuItemCommon extends MatchMenuItemRenderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement> implements CheckedMenuItem<HTMLDivElement> {
     protected _checked: boolean;
     protected _checkmark: HTMLSpanElement;
     protected _item: HTMLDivElement;
@@ -126,14 +125,14 @@ class CheckedMenuItemCommon extends MatchMenuItemRenderer<HTMLDivElement, HTMLSp
     }
 }
 
-export class ElectronCheckedMenuItem extends CheckedMenuItemCommon {
+export class ElectronCheckedMenuItem extends ElectronCheckedMenuItemCommon {
     constructor(properties: CheckedMenuItemProperties, r: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>) {
         super(r, properties.checked, properties.clickHandler);
         this.r.addTextToContainer(this._itemData, { text: properties.text, xExpand: true, className: StyleKeys.NoWrapText });
     }
 };
 
-export class ElectronMatchMenuItem extends CheckedMenuItemCommon {
+export class ElectronMatchMenuItem extends ElectronCheckedMenuItemCommon implements MatchMenuItem<HTMLDivElement> {
     private _match: TennisMatch;
 
     constructor(properties: MatchMenuItemProperties, r: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>) {
