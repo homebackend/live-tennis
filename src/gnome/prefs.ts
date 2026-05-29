@@ -8,6 +8,7 @@ import GdkPixbuf from 'gi://GdkPixbuf';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import { Countries } from '../common/countries';
+import { prefs, PrefSchema, Schema, schema, SettingApplicability } from 'src/common/schema';
 
 const CountryItem = GObject.registerClass({
     GTypeName: 'CountryItem',
@@ -20,13 +21,16 @@ const CountryItem = GObject.registerClass({
 }, class CountryItem extends GObject.Object { });
 
 export default class LiveScorePreferences extends ExtensionPreferences {
-    private _addCheckBoxSettingRow(group: Adw.PreferencesGroup, key: string, settings: Gio.Settings, schema: Gio.SettingsSchema) {
-        const keyObject = schema.get_key(key);
+    private _getKey(key: keyof Schema): string {
+        return key.replaceAll("_", "-");
+    }
+
+    private _addCheckBoxSettingRow(key: keyof Schema, settings: Gio.Settings): Adw.PreferencesRow[] {
+        const schemaItem = schema[key];
         const row = new Adw.ActionRow({
-            title: keyObject.get_summary()!,
-            subtitle: keyObject.get_description()!,
+            title: schemaItem.summary,
+            subtitle: schemaItem.description,
         });
-        group.add(row);
 
         const checkButton = new Gtk.CheckButton({
             halign: Gtk.Align.CENTER, // Prevent horizontal expansion
@@ -34,18 +38,28 @@ export default class LiveScorePreferences extends ExtensionPreferences {
         });
         row.add_suffix(checkButton);
 
-        settings.bind(key, checkButton, 'active', Gio.SettingsBindFlags.DEFAULT);
+        settings.bind(this._getKey(key), checkButton, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        if (schemaItem.dependent) {
+            let rows: Adw.PreferencesRow[] = [row];
+            schemaItem.dependent.map(d => this.getSetting(d, settings)).reduce((accumulator, current) => {
+                accumulator.push(...current);
+                return accumulator;
+            }, rows);
+
+            return rows;
+        }
+
+        return [row];
     }
 
-    private _addIntBasedEntry(group: Adw.PreferencesGroup, key: string, settings: Gio.Settings, schema: Gio.SettingsSchema) {
-        const keyObject = schema.get_key(key);
-
+    private _addIntBasedEntry(key: keyof Schema, settings: Gio.Settings): Adw.PreferencesRow[] {
+        const schemaItem = schema[key];
         const entryRow = new Adw.EntryRow({
-            title: keyObject.get_summary()!,
-            text: String(settings.get_int(key)),
+            title: schemaItem.summary,
+            text: schemaItem.description,
         });
-        entryRow.set_tooltip_text(keyObject.get_description());
-        group.add(entryRow);
+        entryRow.set_tooltip_text(schemaItem.description);
 
         const errorIcon = new Gtk.Image({
             icon_name: 'dialog-error-symbolic',
@@ -53,17 +67,12 @@ export default class LiveScorePreferences extends ExtensionPreferences {
         });
         entryRow.add_suffix(errorIcon);
 
-        const rangeVariant = keyObject.get_range();
-        const innerRangeVariant = rangeVariant.get_child_value(1).get_variant();
-
-        const [minValue, maxValue] = innerRangeVariant.deep_unpack();
-
         entryRow.connect('changed', () => {
             const text = entryRow.get_text();
             const value = parseInt(text, 10);
 
-            if (!isNaN(value) && value >= minValue && value <= maxValue) {
-                settings.set_int(key, value);
+            if (!isNaN(value) && (!schemaItem.minimum || value >= schemaItem.minimum) && (!schemaItem.maximum || value <= schemaItem.maximum)) {
+                settings.set_int(this._getKey(key), value);
                 entryRow.remove_css_class('error-input');
                 errorIcon.set_visible(false);
             } else {
@@ -71,60 +80,37 @@ export default class LiveScorePreferences extends ExtensionPreferences {
                 errorIcon.set_visible(true);
             }
         });
+
+        return [entryRow];
     }
 
-    private _addSpinBoxSettingRow(group: Adw.PreferencesGroup, key: string, min: number, max: number, settings: Gio.Settings, schema: Gio.SettingsSchema, increment: number = 5) {
-        const keyObject = schema.get_key(key);
+    private _addSpinBoxSettingRow(key: keyof Schema, settings: Gio.Settings): Adw.PreferencesRow[] {
+        const schemaItem = schema[key];
 
-        const durationRow = new Adw.ActionRow({
-            title: keyObject.get_summary()!,
-            subtitle: keyObject.get_description()!,
+        const row = new Adw.ActionRow({
+            title: schemaItem.summary,
+            subtitle: schemaItem.description,
         });
-        group.add(durationRow);
 
         const spinner = new Gtk.SpinButton({
             adjustment: new Gtk.Adjustment({
-                lower: min, upper: max, step_increment: increment
+                lower: schemaItem.minimum,
+                upper: schemaItem.maximum,
+                step_increment: schemaItem.increment
             }),
             valign: Gtk.Align.CENTER
         });
-        durationRow.add_suffix(spinner);
-        durationRow.activatable_widget = spinner;
+        row.add_suffix(spinner);
+        row.activatable_widget = spinner;
 
-        settings.bind(key, spinner, 'value', Gio.SettingsBindFlags.DEFAULT);
+        settings.bind(this._getKey(key), spinner, 'value', Gio.SettingsBindFlags.DEFAULT);
+
+        return [row];
     }
 
-    private _addTourSettings(page: Adw.PreferencesPage, settings: Gio.Settings, schema: Gio.SettingsSchema) {
-        const tourGroup = new Adw.PreferencesGroup({
-            title: 'Enable tours',
-            description: 'Control which tours are enabled and processed.',
-        });
-        page.add(tourGroup);
-
-        this._addCheckBoxSettingRow(tourGroup, 'enable-atp', settings, schema);
-        this._addCheckBoxSettingRow(tourGroup, 'enable-wta', settings, schema);
-        this._addCheckBoxSettingRow(tourGroup, 'enable-atp-challenger', settings, schema);
-        this._addCheckBoxSettingRow(tourGroup, 'enable-tennis-temple', settings, schema);
-    }
-
-    private _addLiveViewSettings(page: Adw.PreferencesPage, settings: Gio.Settings, schema: Gio.SettingsSchema) {
-        const liveViewGroup = new Adw.PreferencesGroup({
-            title: 'Live Score Window',
-            description: 'Control Live Score Window behaviour',
-        });
-        page.add(liveViewGroup);
-
-        this._addIntBasedEntry(liveViewGroup, 'live-window-size-x', settings, schema);
-        this._addIntBasedEntry(liveViewGroup, 'live-window-size-y', settings, schema);
-        this._addCheckBoxSettingRow(liveViewGroup, 'auto-hide-no-live-matches', settings, schema);
-        this._addCheckBoxSettingRow(liveViewGroup, 'only-show-live-matches', settings, schema);
-        this._addSpinBoxSettingRow(liveViewGroup, 'keep-completed-duration', 0, 120, settings, schema);
-    }
-
-    private _addMultiCountrySelection(group: Adw.PreferencesGroup, key: string, settings: Gio.Settings, schema: Gio.SettingsSchema) {
-        const keyObject = schema.get_key(key);
-
-        const selectedCodes = new Set(settings.get_strv(key));
+    private _addMultiCountrySelection(key: keyof Schema, settings: Gio.Settings): Adw.PreferencesRow[] {
+        const schemaItem = schema[key];
+        const selectedCodes = new Set(settings.get_strv(this._getKey(key)));
         const model = new Gio.ListStore({ item_type: CountryItem.$gtype });
 
         // Populate the model
@@ -172,7 +158,7 @@ export default class LiveScorePreferences extends ExtensionPreferences {
                         selectedCodes.push(item.ioc);
                     }
                 }
-                settings.set_strv(key, selectedCodes);
+                settings.set_strv(this._getKey(key), selectedCodes);
             });
 
             if (countryItem.flag) {
@@ -195,24 +181,24 @@ export default class LiveScorePreferences extends ExtensionPreferences {
         scrollView.set_child(listView);
 
         const row = new Adw.ActionRow({
-            title: keyObject.get_summary()!,
-            subtitle: keyObject.get_description()!,
+            title: schemaItem.summary,
+            subtitle: schemaItem.description,
         });
         row.add_suffix(scrollView);
-        group.add(row);
+
+        return [row];
     }
 
-    private _addPlayerNamesEntry(group: Adw.PreferencesGroup, key: string, settings: Gio.Settings, schema: Gio.SettingsSchema) {
-        const keyObject = schema.get_key(key);
+    private _addCommaSeparatedListEntry(key: keyof Schema, settings: Gio.Settings): Adw.PreferencesRow[] {
+        const schemaItem = schema[key];
 
-        const currentNames = settings.get_strv(key).join(', ');
+        const currentValues = settings.get_strv(this._getKey(key)).join(', ');
 
         const entryRow = new Adw.EntryRow({
-            title: keyObject.get_summary()!,
-            text: currentNames,
+            title: schemaItem.summary,
+            text: currentValues,
         });
-        entryRow.set_tooltip_text(keyObject.get_description());
-        group.add(entryRow);
+        entryRow.set_tooltip_text(schemaItem.description);
 
         const errorIcon = new Gtk.Image({
             icon_name: 'dialog-error-symbolic',
@@ -227,7 +213,7 @@ export default class LiveScorePreferences extends ExtensionPreferences {
 
             if (text === '' || regex.test(text.trim())) {
                 const names = text.split(',').map(s => s.trim()).filter(Boolean);
-                settings.set_strv(key, names);
+                settings.set_strv(this._getKey(key), names);
                 entryRow.remove_css_class('error-input');
                 errorIcon.set_visible(false);
             } else {
@@ -235,39 +221,55 @@ export default class LiveScorePreferences extends ExtensionPreferences {
                 errorIcon.set_visible(true);
             }
         });
+
+        return [entryRow];
     }
 
-    private _addAutoSelectSettings(page: Adw.PreferencesPage, settings: Gio.Settings, schema: Gio.SettingsSchema) {
-        const group = new Adw.PreferencesGroup({
-            title: 'Live View Match Selection',
-            description: 'Control how Live View match selection works.'
-        });
-        page.add(group);
+    getSetting(property: keyof Schema, settings: Gio.Settings): Adw.PreferencesRow[] {
+        const item = schema[property];
 
-        this._addCheckBoxSettingRow(group, 'auto-select-live-matches', settings, schema);
-        this._addMultiCountrySelection(group, 'auto-select-country-codes', settings, schema);
-        this._addPlayerNamesEntry(group, 'auto-select-player-names', settings, schema);
+        switch (item.type) {
+            case 'boolean':
+                return this._addCheckBoxSettingRow(property, settings);
+            case 'number':
+                if (item.increment) {
+                    return this._addSpinBoxSettingRow(property, settings);
+                }
+                return this._addIntBasedEntry(property, settings);
+            case 'array':
+                if (!item.items || (item.items.type === 'string' && (!item.items.enum || item.items.enum !== 'country'))) {
+                    return this._addCommaSeparatedListEntry(property, settings);
+                } else {
+                    return this._addMultiCountrySelection(property, settings);
+                }
+        }
     }
 
-    private _addDeveloperSettings(page: Adw.PreferencesPage, settings: Gio.Settings, schema: Gio.SettingsSchema) {
+    getGroup(pref: PrefSchema, settings: Gio.Settings): Adw.PreferencesGroup {
         const group = new Adw.PreferencesGroup({
-            title: 'Developer Options',
-            description: 'Control developer mode used to debug this extension.'
+            title: pref.title,
+            description: pref.description,
         });
-        page.add(group);
 
-        this._addCheckBoxSettingRow(group, 'enable-debug-logging', settings, schema);
+        pref.properties.filter(pname => {
+            const property = schema[pname];
+            return !property.applicability || property.applicability.includes(SettingApplicability.GnomeShellExtension);
+        }).map(p => this.getSetting(p, settings)).reduce((accumulator, current) => {
+            current.forEach(c => accumulator.add(c));
+            return accumulator;
+        }, group)
+
+        return group;
     }
 
     fillPreferencesWindow(window: Adw.PreferencesWindow) {
         const settings: Gio.Settings = this.getSettings();
-        const schema = settings.settings_schema;
-
         const page = new Adw.PreferencesPage();
         window.add(page);
-        this._addTourSettings(page, settings, schema);
-        this._addLiveViewSettings(page, settings, schema);
-        this._addAutoSelectSettings(page, settings, schema);
-        this._addDeveloperSettings(page, settings, schema);
+
+        prefs.map(p => this.getGroup(p, settings)).reduce((accumulator, current) => {
+            accumulator.add(current);
+            return accumulator;
+        }, page);
     }
 }

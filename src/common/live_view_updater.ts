@@ -113,7 +113,7 @@ export class LiveViewUpdater<TF extends TTFetcher> {
             await this._updateFloatingWindows(this._currentMatchesData);
             this._runner.setLastRefreshTime(Date.now());
 
-            const interval = await this._settings!.getInt('update-interval');
+            const interval = await this._liveTennis.updateNextRunTimesAndGetInterval();
             this._manager.setFetchTimer(interval, this.fetchMatchData.bind(this));
         } catch (e) {
             this._log(['Error during data fetch', String(e)]);

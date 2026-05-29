@@ -71,6 +71,7 @@ export abstract class FetcherCommon {
 
 interface TourData {
     settingKey: string,
+    nextTime: number,
     fetcher: () => Promise<TennisEvent[] | undefined>,
     lock: boolean,
     eventMap: StringToTennisEventMap,
@@ -85,24 +86,28 @@ export class LiveTennis {
     constructor(log: (logs: string[]) => void, settings: Settings, atp_fetcher: AtpFetcher, wta_fetcher: WtaFetcher, tt_fetcher: TTFetcher) {
         this._tourData = [{
             settingKey: 'atp',
+            nextTime: 0,
             fetcher: atp_fetcher.fetchData.bind(atp_fetcher, { tour: 'ATP' }),
             lock: false,
             eventMap: {},
             disabler: atp_fetcher.disable.bind(atp_fetcher),
         }, {
             settingKey: 'atp-challenger',
+            nextTime: 0,
             fetcher: atp_fetcher.fetchData.bind(atp_fetcher, { tour: 'ATP-Challenger' }),
             lock: false,
             eventMap: {},
             disabler: atp_fetcher.disable.bind(atp_fetcher),
         }, {
             settingKey: 'wta',
+            nextTime: 0,
             fetcher: wta_fetcher.fetchData.bind(wta_fetcher, {}),
             lock: false,
             eventMap: {},
             disabler: wta_fetcher.disable.bind(wta_fetcher),
         }, {
             settingKey: 'tennis-temple',
+            nextTime: 0,
             fetcher: tt_fetcher.fetchData.bind(tt_fetcher, {}),
             lock: false,
             eventMap: {},
@@ -113,10 +118,32 @@ export class LiveTennis {
         this._settings = settings;
     }
 
+    public async updateNextRunTimesAndGetInterval(): Promise<number> {
+        const minimum = Math.min(...await Promise.all(this._tourData
+            .filter(async t => await this._settings!.getBoolean(`enable-${t.settingKey}`))
+            .map(async t => {
+                if (t.nextTime <= 0) {
+                    t.nextTime = await this._settings!.getInt(`${t.settingKey}-update-interval`);
+                }
+
+                return t.nextTime;
+            })
+        ));
+
+        this._tourData.forEach(t => {
+            t.nextTime -= minimum;
+        });
+
+        this._log(["Interval for next update", minimum.toString()]);
+        this._tourData.forEach(t => this._log([t.settingKey, t.nextTime.toString()]));
+
+        return minimum;
+    }
+
     private async _process(tourData: TourData): Promise<[string, StringToTennisEventMap, StringToTennisEventMap | undefined]> {
         const oldEventsMap = tourData.eventMap;
         if (await this._settings.getBoolean(`enable-${tourData.settingKey}`)) {
-            if (tourData.lock) {
+            if (tourData.nextTime > 0 || tourData.lock) {
                 return [tourData.settingKey, oldEventsMap, oldEventsMap];
             }
 
@@ -146,7 +173,7 @@ export class LiveTennis {
         this._tourData.forEach(tourData => {
             const size = pendingPromises.size;
             pendingPromises.set(size, this._trackPromise(this._process(tourData), size));
-        })
+        });
 
         let failed = false;
         const statuses = new Map<string, boolean>();

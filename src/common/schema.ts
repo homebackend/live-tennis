@@ -16,6 +16,10 @@ export interface Schema {
     enable_wta: boolean;
     enable_atp_challenger: boolean;
     enable_tennis_temple: boolean;
+    atp_update_interval: number;
+    wta_update_interval: number;
+    atp_challenger_update_interval: number;
+    tennis_temple_update_interval: number;
     live_window_size_x: number;
     live_window_size_y: number;
     enable_debug_logging: boolean;
@@ -28,16 +32,63 @@ export enum SettingApplicability {
     ReactNativeApp,
 }
 
-interface FullSchemaItem<K extends keyof Schema = keyof Schema> {
-    type: 'boolean' | 'number' | 'array';
+type BooleanKeysOfSchema = {
+    [K in keyof Schema]: Schema[K] extends boolean ? K : never;
+}[keyof Schema];
+
+type NumericKeysOfSchema = {
+    [K in keyof Schema]: Schema[K] extends number ? K : never;
+}[keyof Schema];
+
+type ArrayKeyOfSchema = {
+    [K in keyof Schema]: Schema[K] extends any[] ? K : never;
+}[keyof Schema];
+
+interface BaseSchemaItem<K extends keyof Schema> {
     default: Schema[K];
-    applicability?: SettingApplicability[],
-    items?: { type: string, enum?: string },
+    applicability?: SettingApplicability[];
     summary?: string;
     description?: string;
+}
+
+interface NonArraySchemaItem<K extends keyof Schema> extends BaseSchemaItem<K> {
+    items?: never;
+}
+
+interface NonBooleanSchemaItem<K extends keyof Schema> extends BaseSchemaItem<K> {
+    dependent?: never;
+}
+
+interface NonNumericSchemaItem<K extends keyof Schema> extends BaseSchemaItem<K> {
+    increment?: never;
+    minimum?: never;
+    maximum?: never;
+}
+
+interface ArraySchemaItem<K extends ArrayKeyOfSchema>
+    extends NonBooleanSchemaItem<K>, NonNumericSchemaItem<K> {
+    type: 'array';
+    items?: { type: string, enum?: string };
+}
+
+interface BooleanSchemaItem<K extends BooleanKeysOfSchema>
+    extends NonNumericSchemaItem<K>, NonArraySchemaItem<K> {
+    type: 'boolean';
+    dependent?: (keyof Schema)[];
+}
+
+interface NumericSchemaItem<K extends NumericKeysOfSchema>
+    extends NonBooleanSchemaItem<K>, NonArraySchemaItem<K> {
+    type: 'number';
+    increment?: number;
     minimum?: number;
     maximum?: number;
 }
+
+export type FullSchemaItem<K extends keyof Schema = keyof Schema> =
+    K extends BooleanKeysOfSchema ? BooleanSchemaItem<K>
+    : K extends NumericKeysOfSchema ? NumericSchemaItem<K>
+    : K extends ArrayKeyOfSchema ? ArraySchemaItem<K> : never;
 
 export type FullSchema = {
     [key in keyof Schema]: FullSchemaItem<key>;
@@ -71,7 +122,9 @@ export const schema: FullSchema = {
     },
     update_interval: {
         type: 'number',
-        default: 15,
+        default: 60,
+        minimum: 10,
+        maximum: 36400,
         summary: 'Data update interval',
         description: 'The interval in seconds at which to fetch new match data.',
     },
@@ -134,33 +187,76 @@ export const schema: FullSchema = {
     keep_completed_duration: {
         type: 'number',
         default: 30,
+        minimum: 0,
+        maximum: 120,
+        increment: 5,
         summary: 'Keep completed matches duration',
         description: 'The duration in minutes to keep matches visible after they have finished.',
     },
     enable_atp: {
         type: 'boolean',
         default: true,
+        dependent: ['atp_update_interval'],
         summary: 'Enable ATP tour',
         description: 'Process events and matches from ATP tour.',
     },
     enable_wta: {
         type: 'boolean',
         default: true,
+        dependent: ['wta_update_interval'],
         summary: 'Enable WTA tour',
         description: 'Process events and matches from WTA tour.',
     },
     enable_atp_challenger: {
         type: 'boolean',
         default: false,
+        dependent: ['atp_challenger_update_interval'],
         summary: 'Enable ATP Challenger tour',
         description: 'Process events and matches from ATP Challenger tour.',
     },
     enable_tennis_temple: {
         type: 'boolean',
         default: false,
+        dependent: ['tennis_temple_update_interval'],
         summary: 'Enable Tennis Temple',
         description: 'Process events and matches as provided by tennistemple.com.',
         applicability: [SettingApplicability.ElectronTrayApp, SettingApplicability.GnomeShellExtension]
+    },
+    atp_update_interval: {
+        type: 'number',
+        default: 30,
+        minimum: 10,
+        maximum: 36400,
+        increment: 5,
+        summary: 'Data update interval for ATP',
+        description: 'The interval in seconds at which to fetch new match data from ATP.',
+    },
+    wta_update_interval: {
+        type: 'number',
+        default: 90,
+        minimum: 10,
+        maximum: 36400,
+        increment: 5,
+        summary: 'Data update interval for WTA',
+        description: 'The interval in seconds at which to fetch new match data from WTA.',
+    },
+    atp_challenger_update_interval: {
+        type: 'number',
+        default: 30,
+        minimum: 10,
+        maximum: 36400,
+        increment: 5,
+        summary: 'Data update interval for ATP Challenger',
+        description: 'The interval in seconds at which to fetch new match data from ATP Challenger.',
+    },
+    tennis_temple_update_interval: {
+        type: 'number',
+        default: 15,
+        minimum: 10,
+        maximum: 36400,
+        increment: 5,
+        summary: 'Data update interval for Tennis Temple',
+        description: 'The interval in seconds at which to fetch new match data from Tennis Temple.',
     },
     live_window_size_x: {
         type: 'number',

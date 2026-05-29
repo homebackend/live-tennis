@@ -17,7 +17,7 @@ declare global {
     }
 }
 
-async function getSetting(property: keyof Schema): Promise<HTMLDivElement> {
+async function getSetting(property: keyof Schema): Promise<HTMLDivElement[]> {
     const item = schema[property];
 
     const row = document.createElement('div');
@@ -54,11 +54,17 @@ async function getSetting(property: keyof Schema): Promise<HTMLDivElement> {
     switch (item.type) {
         case 'boolean':
             {
+                const checked = await window.preferences.getSettingBoolean(property);
                 const input = document.createElement('input');
                 input.type = 'checkbox';
                 input.id = property;
-                input.checked = await window.preferences.getSettingBoolean(property);
+                input.checked = checked;
                 input.addEventListener('change', (e) => {
+                    const targetInput = e.target as HTMLInputElement;
+                    const container = document.getElementById(`${property}_container`);
+                    if (e.target && container) {
+                        container.style.display = targetInput.checked ? 'block' : 'none';
+                    }
                     const input = e.target as HTMLInputElement;
                     window.preferences.setSettingBoolean(property, input.checked);
                 });
@@ -74,6 +80,7 @@ async function getSetting(property: keyof Schema): Promise<HTMLDivElement> {
                 input.value = (await window.preferences.getSettingInt(property)).toString();
                 if (item.minimum !== undefined) input.min = item.minimum.toString();
                 if (item.maximum !== undefined) input.max = item.maximum.toString();
+                if (item.increment) input.step = item.increment.toString();
                 input.addEventListener('change', (e) => {
                     const input = e.target as HTMLInputElement;
                     window.preferences.setSettingInt(property, Number(input.value));
@@ -83,7 +90,6 @@ async function getSetting(property: keyof Schema): Promise<HTMLDivElement> {
             break;
 
         case 'array':
-            console.log([!item.items, item.items?.type == 'string', item.items?.enum != 'country']);
             if (!item.items || (item.items.type === 'string' && (!item.items.enum || item.items.enum !== 'country'))) {
                 const input = document.createElement('input');
                 input.type = 'text';
@@ -97,9 +103,9 @@ async function getSetting(property: keyof Schema): Promise<HTMLDivElement> {
                 inputElement = input;
             } else {
                 const div = document.createElement('div');
-                div.style.display = 'flex'; 
-                div.style.flexDirection = 'column'; 
-                div.style.height = '200px'; 
+                div.style.display = 'flex';
+                div.style.flexDirection = 'column';
+                div.style.height = '200px';
                 div.style.overflow = 'scroll';
 
                 let selectedCountries = await window.preferences.getSettingStrV(property);
@@ -124,7 +130,6 @@ async function getSetting(property: keyof Schema): Promise<HTMLDivElement> {
                     };
                     input.addEventListener('click', handler);
                     countryItem.appendChild(input);
-                    
 
                     const flag = document.createElement('img');
                     flag.src = `flags/${country.ioc.toLowerCase()}.svg`;
@@ -146,10 +151,26 @@ async function getSetting(property: keyof Schema): Promise<HTMLDivElement> {
     }
 
     row.appendChild(inputElement!);
-    return row;
+
+    if (item.dependent) {
+        const checked = await window.preferences.getSettingBoolean(property);
+        const settings = document.createElement('div');
+        settings.id = `${property}_container`;
+        settings.style.width = '100%';
+        settings.style.display = checked ? 'block' : 'none';
+        settings.style.marginLeft = '20px';
+        settings.style.flexDirection = 'column';
+        settings.style.backgroundColor = '#343437';
+        settings.style.borderRadius = '10px';
+
+        (await Promise.all(item.dependent.map(key => getSetting(key)))).reduce((accumulator, current) => addToAccumulator(accumulator, current), settings as HTMLElement);
+        return [row, settings];
+    }
+
+    return [row];
 }
 
-function addToAccumulator(accumulator: HTMLElement, current: HTMLDivElement): HTMLElement {
+function addToAccumulator(accumulator: HTMLElement, current: HTMLDivElement | HTMLDivElement[]): HTMLElement {
     if (accumulator.children.length > 0) {
         const sep = document.createElement('div');
         sep.style.width = '100%';
@@ -158,7 +179,10 @@ function addToAccumulator(accumulator: HTMLElement, current: HTMLDivElement): HT
         accumulator.appendChild(sep);
     }
 
-    accumulator.appendChild(current);
+    if (!Array.isArray(current)) {
+        current = [current];
+    }
+    current.forEach(c => accumulator.appendChild(c));
     return accumulator;
 }
 
