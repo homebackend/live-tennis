@@ -26,6 +26,7 @@ export const MainMenu = ({ navigation }: HomeNavigationProps) => {
   const [runner, setRunner] = useState<RNRunner | null>(null);
   const [liveViewRenderer, setLiveViewRenderer] = useState<RNLiveViewRenderer | null>(null);
   const [refreshTimeText, setRefreshTimeText] = useState('Never'); // Will update after each fetch
+  const [fetchStatusText, setFetchStatusText] = useState('Never');
   const [expandedEvent, setExpandEvent] = useState<RNPopupSubMenuItem | null>(null); // Will update after clicking event menu
   const theme = useTheme();
   const [imagesToFetch, setImagesToFetch] = useState<string[]>([]);
@@ -59,7 +60,7 @@ export const MainMenu = ({ navigation }: HomeNavigationProps) => {
 
       const renderer = new RNRenderer(log, theme, ImageDimensionCache);
       const newRunner = new RNRunner(log, settings, theme, renderer,
-        setRefreshTimeText, setExpandEvent, addToImageFetchQueue,
+        setRefreshTimeText, setFetchStatusText, setExpandEvent, addToImageFetchQueue,
         () => navigation.navigate('Settings', { settings: settings }), () => {
           if (updater) {
             updater.fetchMatchData();
@@ -147,7 +148,7 @@ export const MainMenu = ({ navigation }: HomeNavigationProps) => {
     );
   }
 
-  const menuView = runner.renderMainUI(refreshTimeText, expandedEvent);
+  const menuView = runner.renderMainUI(refreshTimeText, fetchStatusText, expandedEvent);
   let separator;
   let liveView;
   if (currentMatch && liveViewRenderer) {

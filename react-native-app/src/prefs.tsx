@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SettingsNavigationProps } from "./navigation_types";
-import { prefs, schema, SettingApplicability } from "../../src/common/schema";
+import { prefs, Schema, schema, SettingApplicability } from "../../src/common/schema";
 import { CommaSeparatedInputProperties, flagImageSource, styles } from "./prefs_common";
 
 interface NumberSettingInputProperties {
@@ -115,25 +115,42 @@ export const PreferencesScreen = ({ route, navigation }: SettingsNavigationProps
         const loadSettings = async () => {
             const tempSettingsMap = new Map<string, any>();
 
-            await Promise.all(prefs.map(async prefGroup => {
-                await Promise.all(prefGroup.properties.map(async pname => {
-                    const property = schema[pname];
-                    switch (property.type) {
-                        case 'boolean':
-                            tempSettingsMap.set(pname, await settings.getBoolean(pname));
-                            break;
-                        case 'number':
-                            tempSettingsMap.set(pname, await settings.getInt(pname));
-                            break;
-                        case 'array':
-                            tempSettingsMap.set(pname, await settings.getStrv(pname));
-                    }
-                }));
-            }));
+            const loadSingleSetting = async (pname: keyof Schema) => {
+                if (tempSettingsMap.has(pname)) return;
+
+                const property = schema[pname];
+                if (!property) return;
+
+                switch (property.type) {
+                    case 'boolean':
+                        const boolVal = await settings.getBoolean(pname);
+                        tempSettingsMap.set(pname, boolVal);
+                        if (property.dependent) {
+                            await Promise.all(property.dependent.map(async (depName) => {
+                                await loadSingleSetting(depName); // Recursive load
+                            }));
+                        }
+                        break;
+                    case 'number':
+                        tempSettingsMap.set(pname, await settings.getInt(pname));
+                        break;
+                    case 'array':
+                        tempSettingsMap.set(pname, await settings.getStrv(pname));
+                        break;
+                }
+            };
+
+            await Promise.all(
+                prefs.map(async (prefGroup) => {
+                    await Promise.all(
+                        prefGroup.properties.map((pname) => loadSingleSetting(pname))
+                    );
+                })
+            );
 
             setSettingValues(tempSettingsMap);
             setLoaded(true);
-        }
+        };
 
         loadSettings();
     }, [settings]);
@@ -164,6 +181,93 @@ export const PreferencesScreen = ({ route, navigation }: SettingsNavigationProps
         settings.setStrv(key, values);
     };
 
+    const renderSettingItem = (pname: keyof Schema, isNested = false) => {
+        const property = schema[pname];
+        if (!property) return null;
+
+        const containerStyle = isNested ? [styles.settingItem, { marginLeft: 20 }] : styles.settingItem;
+        const fallbackContainerStyle = isNested ? [styles.container, { marginLeft: 20 }] : styles.container;
+
+        switch (property.type) {
+            case 'boolean':
+                const isChecked = !!settingValues.get(pname);
+                return (
+                    <React.Fragment key={pname}>
+                        <View style={containerStyle}>
+                            <View key={pname} style={styles.textContainer}>
+                                <Text style={styles.title}>{property.summary}</Text>
+                                <Text style={styles.description}>{property.description}</Text>
+                            </View>
+                            <Switch
+                                onValueChange={(value) => toggleSwitch(pname, value)}
+                                value={isChecked}
+                            />
+                        </View>
+
+                        {isChecked && property.dependent && property.dependent.map(depName =>
+                            renderSettingItem(depName, true)
+                        )}
+                    </React.Fragment>
+                );
+
+            case 'number':
+                return (
+                    <View key={pname} style={isNested ? { marginLeft: 20 } : null}>
+                        <NumberSettingInput
+                            key={pname}
+                            summary={property.summary!}
+                            description={property.description!}
+                            min={property.minimum || 0}
+                            max={property.maximum || 100}
+                            initialValue={settingValues.get(pname)}
+                            onValueChange={(value: number) => setNumericValue(pname, value)}
+                        />
+                    </View>
+                );
+            case 'array':
+                if (!property.items || (property.items.type === 'string' && (!property.items.enum || property.items.enum !== 'country'))) {
+                    return (
+                        <View key={pname} style={isNested ? { marginLeft: 20 } : null}>
+                            <CommaSeparatedInput
+                                key={pname}
+                                summary={property.summary!}
+                                description={property.description!}
+                                initialValuesArray={settingValues.get(pname)}
+                                onChange={(values: string[]) => handleTagsChange(pname, values)}
+                            />
+                        </View>
+                    );
+                } else {
+                    const selectedCountryCodes = (settingValues.get(pname) as string[]) || [];
+                    return (
+                        <View style={fallbackContainerStyle} key={pname}>
+                            <View style={styles.textContainer}>
+                                <Text style={styles.title}>{property.summary}</Text>
+                                <Text style={styles.description}>{property.description}</Text>
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('CountrySettings', {
+                                    summary: property.summary!,
+                                    description: property.description!,
+                                    key: pname,
+                                    initialValues: settingValues.get(pname),
+                                    settings: settings,
+                                })}
+                            >
+                                <Text key="country-selection">Current Selection:</Text>
+                                {selectedCountryCodes.length > 0 ? selectedCountryCodes.map(code => (
+                                    <Image key={code} source={flagImageSource(code)} style={styles.flag} />
+                                )) : (
+                                    <Text>No country selected</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    );
+                }
+        }
+        return null;
+    };
+
     return (
         <ScrollView style={styles.container}>
             {prefs.map(prefGroup => {
@@ -181,82 +285,10 @@ export const PreferencesScreen = ({ route, navigation }: SettingsNavigationProps
                         <Text style={styles.header}>{prefGroup.title}</Text>
                         <Text style={styles.headerDescription}>{prefGroup.description}</Text>
 
-                        {applicableProperties.map(pname => {
-                            const property = schema[pname];
-                            switch (property.type) {
-                                case 'boolean':
-                                    return (
-                                        <View key={pname} style={styles.settingItem}>
-                                            <View>
-                                                <Text style={styles.title}>{property.summary}</Text>
-                                                <Text style={styles.description}>{property.description}</Text>
-                                            </View>
-                                            <Switch
-                                                onValueChange={(value) => toggleSwitch(pname, value)}
-                                                value={settingValues.get(pname)}
-                                            />
-                                        </View>
-                                    );
-                                case 'number':
-                                    return (
-                                        <NumberSettingInput
-                                            key={pname}
-                                            summary={property.summary!}
-                                            description={property.description!}
-                                            min={property.minimum || 0}
-                                            max={property.maximum || 100}
-                                            initialValue={settingValues.get(pname)}
-                                            onValueChange={(value: number) => setNumericValue(pname, value)}
-                                        />
-                                    );
-                                case 'array':
-                                    if (!property.items || (property.items.type === 'string' && (!property.items.enum || property.items.enum !== 'country'))) {
-                                        return (
-                                            <CommaSeparatedInput
-                                                key={pname}
-                                                summary={property.summary!}
-                                                description={property.description!}
-                                                initialValuesArray={settingValues.get(pname)}
-                                                onChange={(values: string[]) => handleTagsChange(pname, values)}
-                                            />
-                                        );
-
-                                    } else {
-                                        const selectedCountryCodes = settingValues.get(pname) as string[];
-                                        return (
-                                            <View style={styles.container} key={pname}>
-                                                <View style={styles.textContainer}>
-                                                    <Text style={styles.title}>{property.summary}</Text>
-                                                    <Text style={styles.description}>{property.description}</Text>
-                                                </View>
-                                                <TouchableOpacity
-                                                    onPress={() => navigation.navigate('CountrySettings', {
-                                                        summary: property.summary!,
-                                                        description: property.description!,
-                                                        key: pname,
-                                                        initialValues: settingValues.get(pname),
-                                                        settings: settings,
-                                                    })}
-                                                >
-                                                    <Text key="country-selection">Current Selection:</Text>
-                                                    {selectedCountryCodes.length > 0 ? selectedCountryCodes.map(code => {
-                                                        return (
-                                                            <Image key={code} source={flagImageSource(code)} style={styles.flag} />
-                                                        );
-                                                    }) : (
-                                                        <Text>No country selected</Text>
-                                                    )}
-                                                </TouchableOpacity>
-                                            </View>
-                                        );
-                                    }
-                            }
-                            return null;
-                        })}
+                        {applicableProperties.map(pname => renderSettingItem(pname, false))}
                     </View>
                 );
             })}
         </ScrollView>
     );
 };
-

@@ -8,7 +8,6 @@ export abstract class AppMenuRenderer<ContainerType, TextType, ImageType, MIC,
     PI extends PopupSubMenuItem<MIC, MIC>, LI extends MenuItem<MIC>, CI extends CheckedMenuItem<MIC>, MI extends MatchMenuItem<MIC>>
     extends MenuRendererCommon<ContainerType, TextType, ImageType, MIC, MIC, MIC, MIC, PI, LI, CI, MI> {
 
-    protected statusText?: TextType;
     protected eventContainer: ContainerType;
     protected otherContainer: ContainerType;
 
@@ -31,6 +30,20 @@ export abstract class AppMenuRenderer<ContainerType, TextType, ImageType, MIC,
     addMenuSeprator(): void {
         const r = this._renderer;
         r.addContainersToContainer(this.otherContainer, r.createSeparator({}));
+    }
+
+    protected getDataFetchStatusContainer(text: string): [ContainerType, TextType] {
+        const r = this._renderer;
+        const container = r.createContainer({ xExpand: true, className: StyleKeys.MainMenuMatchItem });
+        const textItem = r.addTextToContainer(container, {
+            text: text,
+            className: StyleKeys.MainMenuMatchItem,
+            xExpand: true,
+            textAlign: Alignment.Begin,
+            onClick: this.refresh.bind(this),
+        });
+
+        return [container, textItem];
     }
 
     protected getRefreshMenuItem(text: string): [ContainerType, TextType] {
@@ -71,17 +84,6 @@ export abstract class AppMenuRenderer<ContainerType, TextType, ImageType, MIC,
             xExpand: true,
             onClick: this.quit.bind(this),
             className: `${StyleKeys.NoWrapText} ${StyleKeys.MainMenuMatchItem}`,
-        });
-    }
-
-    addDataFetchStatusContainer(): void {
-        const r = this._renderer;
-        this.statusText = r.addTextToContainer(this.otherContainer, {
-            text: "⌛",
-            className: StyleKeys.MainMenuMatchItem,
-            xExpand: true,
-            textAlign: Alignment.Begin,
-            onClick: this.refresh.bind(this),
         });
     }
 }

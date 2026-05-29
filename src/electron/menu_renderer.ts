@@ -69,6 +69,7 @@ class MainWindowSettings implements Settings {
 class MenuRenderer extends AppMenuRenderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement, HTMLDivElement,
     ElectronPopupSubMenuItem, ElectronLinkMenuItem, ElectronCheckedMenuItem, ElectronMatchMenuItem> {
     private _refreshTimeSpan?: HTMLSpanElement;
+    private _fetchStatusSpan?: HTMLSpanElement;
 
     constructor(basePath: string, renderer: ElectronRenderer) {
         super(basePath, window.electronAPIMenu.log, new MainWindowSettings(), renderer,
@@ -110,9 +111,16 @@ class MenuRenderer extends AppMenuRenderer<HTMLDivElement, HTMLSpanElement, HTML
     }
 
     updateFetchStatusText(statusText: string): void {
-        if (this.statusText) {
-            this.statusText.textContent = statusText;
+        if (this._fetchStatusSpan) {
+            this._fetchStatusSpan.textContent = statusText;
         }
+    }
+
+    addDataFetchStatusContainer(): void {
+        const [div, span] = this.getDataFetchStatusContainer('⌛');
+        this._fetchStatusSpan = span;
+        const r = this._renderer;
+        r.addContainersToContainer(this.otherContainer, div);
     }
 
     addRefreshMenuItem(): void {

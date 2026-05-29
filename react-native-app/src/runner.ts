@@ -14,7 +14,9 @@ export class RNRunner extends AppMenuRenderer<RNElement, RNElement, RNElement, R
     RNPopupSubMenuItem, RNLinkMenuItem, RNCheckedMenuItem, RNMatchMenuItem> {
 
     private _refreshTimeText = 'Never';
+    private _fetchStatusText = '⌛';
     private _setRefreshTimeText: React.Dispatch<React.SetStateAction<string>>;
+    private _setFetchStatusText: React.Dispatch<React.SetStateAction<string>>;
     private _menuItems: RNPopupSubMenuItem[] = [];
     public setExpandEvent: React.Dispatch<React.SetStateAction<RNPopupSubMenuItem | null>>;
     private _addToImageFetchQueue: (uri?: string) => void;
@@ -26,6 +28,7 @@ export class RNRunner extends AppMenuRenderer<RNElement, RNElement, RNElement, R
     constructor(log: (logs: string[]) => void, settings: Settings,
         theme: LiveTennisTheme, renderer: RNRenderer,
         setRefreshTimeText: React.Dispatch<React.SetStateAction<string>>,
+        setFetchStatusText: React.Dispatch<React.SetStateAction<string>>,
         setExpandEvent: React.Dispatch<React.SetStateAction<RNPopupSubMenuItem | null>>,
         addToImageFetchQueue: (uri?: string) => void,
         openSettings: () => void, fetchData: () => void,
@@ -38,6 +41,7 @@ export class RNRunner extends AppMenuRenderer<RNElement, RNElement, RNElement, R
         }
 
         this._setRefreshTimeText = setRefreshTimeText;
+        this._setFetchStatusText = setFetchStatusText;
         this.setExpandEvent = setExpandEvent;
         this._addToImageFetchQueue = addToImageFetchQueue;
         this._openSettings = openSettings;
@@ -52,6 +56,15 @@ export class RNRunner extends AppMenuRenderer<RNElement, RNElement, RNElement, R
 
     setLastRefrestTimeText(text: string): void {
         this._setRefreshTimeText(text);
+    }
+
+    addDataFetchStatusContainer(): void {
+        const dataFetchStatusContainer = () => {
+            const [container] = this.getDataFetchStatusContainer(this._fetchStatusText);
+            return container.element();
+        }
+
+        this.otherContainer.children?.push(dataFetchStatusContainer);
     }
 
     addRefreshMenuItem(): void {
@@ -78,8 +91,9 @@ export class RNRunner extends AppMenuRenderer<RNElement, RNElement, RNElement, R
         return super.addMatch(event, match);
     }
 
-    renderMainUI(refreshTimeText: string, expandedEvent: RNPopupSubMenuItem | null): ReactElement {
+    renderMainUI(refreshTimeText: string, fetchStatusText: string, expandedEvent: RNPopupSubMenuItem | null): ReactElement {
         this._refreshTimeText = refreshTimeText;
+        this._fetchStatusText = fetchStatusText;
         this._menuItems.forEach(mi => (mi.expanded = (mi === expandedEvent)));
         this.eventContainer.children = this._menuItems.map(mi => mi.menu);
         const themeData = getCssThemeStyles(this._theme)[StyleKeys.MainMenuTournamentItem];
@@ -103,6 +117,10 @@ export class RNRunner extends AppMenuRenderer<RNElement, RNElement, RNElement, R
                 onClick: () => NativeModules.DevMenu.show(),
             })
         }
+    }
+
+    updateFetchStatusText(statusText: string): void {
+        this._setFetchStatusText(statusText);
     }
 
     protected refresh(): void {
