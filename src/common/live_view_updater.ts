@@ -56,7 +56,7 @@ export class LiveViewUpdater<TF extends TTFetcher> {
         this._manager.unsetFetchTimer();
     }
 
-    async fetchMatchData() {
+    private async _fetchMatchData() {
         try {
             this._log(['Starting fetchMatchData']);
             const matchIds: Set<string> = new Set();
@@ -114,13 +114,19 @@ export class LiveViewUpdater<TF extends TTFetcher> {
             this._runner.setLastRefreshTime(Date.now());
 
             const interval = await this._liveTennis.updateNextRunTimesAndGetInterval();
-            this._manager.setFetchTimer(interval, this.fetchMatchData.bind(this));
+            this._manager.setFetchTimer(interval, this._fetchMatchData.bind(this));
+            this._log([`Finished fetchMatchData. Next run in ${interval} seconds`]);
         } catch (e) {
             this._log(['Error during data fetch', String(e)]);
             if (e instanceof Error && e.stack) {
                 this._log(['Stack trace', e.stack]);
             }
         }
+    }
+
+    async fetchMatchData(): Promise<void> {
+        this._liveTennis.resetNextRunTimes();
+        await this._fetchMatchData();
     }
 
     updateUI() {

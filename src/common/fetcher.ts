@@ -140,12 +140,20 @@ export class LiveTennis {
         return minimum;
     }
 
+    public resetNextRunTimes(): void {
+        this._tourData.forEach(t => {
+            t.nextTime = 0;
+        });
+    }
+
     private async _process(tourData: TourData): Promise<[string, StringToTennisEventMap, StringToTennisEventMap | undefined]> {
         const oldEventsMap = tourData.eventMap;
         if (await this._settings.getBoolean(`enable-${tourData.settingKey}`)) {
             if (tourData.nextTime > 0 || tourData.lock) {
                 return [tourData.settingKey, oldEventsMap, oldEventsMap];
             }
+
+            this._log([`Starting processing for ${tourData.settingKey}`]);
 
             tourData.lock = true;
             const newEvents = await tourData.fetcher();

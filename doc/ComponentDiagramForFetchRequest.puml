@@ -1,0 +1,95 @@
+@startuml
+!theme vibrant
+allowmixing
+
+<style>
+classDiagram {
+  class {
+    FontColor #000000
+    stereotype {
+      FontColor #000000
+    }
+  }
+  component {
+    FontColor #000000
+  }
+}
+</style>
+
+skinparam class {
+    BackgroundColor LightGray
+    
+    BackgroundColor<<Gnome>> #E2F0D9
+    BorderColor<<Gnome>> #385723
+    
+    BackgroundColor<<Electron>> #DDEBF7
+    BorderColor<<Electron>> #1F4E78
+    
+    BackgroundColor<<RN>> #FFF2CC
+    BorderColor<<RN>> #833C0C
+}
+
+skinparam ArrowFontColor #000000
+
+person "End User" as user
+component "Gnome Shell" as gnome {
+  component "signal('manual-refresh')" as gsignal
+}
+component "Electron App" as eapp
+
+class LiveScoreExtension <<Gnome>> {
+  + enable()
+}
+
+class LiveScoreButton <<Gnome>> {
+  + triggerFetch()
+}
+
+class GnomeRunner <<Gnome>>
+
+class LiveViewUpdater {
+  + fetchMatchData()
+}
+
+component "Main" as emain {
+  component "listner ('refresh')" as elistner
+}
+component "Menu Process" as emenu {
+  component "renderMenu()" as erenderMenu
+}
+class ElectronRunner <<Electron>> {
+  + constructor(): Creates system tray and menu along with separate process
+}
+class ElectronLiveViewManager <<Electron>>
+
+component "Mobile App" as rnmain
+class RNRenderer <<RN>>
+class RNRunner <<RN>>
+class RNLiveViewManager <<RN>>
+
+user ---> gnome: 1. Enables Extension
+gnome --> LiveScoreExtension: 2. enable()
+LiveScoreExtension --> LiveScoreButton: 3a. constructor()
+LiveScoreExtension ---> LiveViewUpdater: 3b. constructor()
+LiveScoreButton --> GnomeRunner: 3a.1 constructor()
+GnomeRunner --> LiveScoreButton: 3a.2 triggerFetch()
+LiveScoreButton --> gnome: 3a.3 emit('manual-refresh')
+gsignal --> LiveViewUpdater : 3a.4 fetchMatchData()
+
+user --> eapp: 1. Starts Application
+eapp --> emain: 2. whenReady()
+emain --> ElectronRunner: 3a. constructor()
+emain --> ElectronLiveViewManager: 3b. constructor()
+emain --> LiveViewUpdater: 3c. constructor()
+ElectronRunner --> emenu: 3a.1 Starts Process
+erenderMenu --> emain: 3a.2 send('refresh')
+elistner --> LiveViewUpdater : 3a.3 fetchMatchData()
+
+user --> rnmain: 1. Starts Mobile App
+rnmain --> RNRenderer: 2a. constructor()
+rnmain --> RNRunner: 2b. constructor()
+rnmain --> RNLiveViewManager: 2c. constructor()
+rnmain --> LiveViewUpdater: 2d. constructor()
+rnmain --> LiveViewUpdater: 2e. fetchMatchData()
+
+@enduml

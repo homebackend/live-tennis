@@ -52,7 +52,7 @@ export abstract class Runner {
 
     async addEvent(event: TennisEvent): Promise<void> {
         if (!this.hasEvent(event.id)) {
-            this.log([`Adding tournament: ${event.title} (${event.id})`]);
+            // this.log([`Adding tournament: ${event.title} (${event.id})`]);
 
             const position = this._tennisEvents.insert(event.title);
             const prizeMoney = event.displayPrizeMoney ? ` [${event.displayPrizeMoney}]` : '';
@@ -108,7 +108,7 @@ export abstract class Runner {
 
     async addMatch(event: TennisEvent, match: TennisMatch): Promise<void> {
         if (!this.hasMatch(this.uniqMatchId(event, match))) {
-            this.log(['Adding match', event.title, match.displayName, match.id]);
+            // this.log(['Adding match', event.title, match.displayName, match.id]);
 
             const matchId = this.uniqMatchId(event, match);
             let currentSelection = await this.settings.getStrv('selected-matches');
@@ -134,7 +134,7 @@ export abstract class Runner {
     }
 
     async updateMatch(event: TennisEvent, match: TennisMatch): Promise<void> {
-        this.log(['Updating match', event.title, event.id, match.displayName, match.id]);
+        // this.log(['Updating match', event.title, event.id, match.displayName, match.id]);
 
         const matchId = this.uniqMatchId(event, match);
         this.updateMatchMenuItem(matchId, match);
@@ -163,7 +163,7 @@ export abstract class Runner {
     }
 
     async removeEvent(event: TennisEvent): Promise<void> {
-        this.log([`Removing tournament: ${event.title}`]);
+        // this.log([`Removing tournament: ${event.title}`]);
 
         this._tennisEvents.remove(event.title);
         await this.filterAutoEvents(s => s !== event.id);
@@ -183,7 +183,7 @@ export abstract class Runner {
     }
 
     async removeMatch(event: TennisEvent, match: TennisMatch) {
-        this.log(['Removinging match', event.title, match.displayName, match.id]);
+        // this.log(['Removinging match', event.title, match.displayName, match.id]);
 
         const matchId = this.uniqMatchId(event, match);
         await this.filterLiveViewMatches(id => id !== matchId);
