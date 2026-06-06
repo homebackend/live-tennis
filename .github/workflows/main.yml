@@ -7,11 +7,14 @@ on:
     paths:
       - 'package.json'
       - '.github/workflows/*.yml'
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   # Job 1: Build for Debian (.deb), RPM (.rpm), and AppImage
   build-deb-rpm-appimage:
+    name: Build Linux (deb/rpm/appimage) and Gnome Shell Extension
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -47,6 +50,7 @@ jobs:
 
   # Job 2: Build for Arch Linux (.pkg.tar.zst package)
   build-arch:
+    name: Build Arch Linux
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
@@ -75,6 +79,7 @@ jobs:
 
   # Job 3: Build for Windows (.exe installer)
   build-windows:
+    name: Build Windows
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -96,6 +101,7 @@ jobs:
 
   # Job 4: Build for Android
   build-android:
+    name: Build Android
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -122,8 +128,10 @@ jobs:
 
   # Job 5: Create GitHub Release (depends on all builds finishing)
   create-release:
+    name: Create Release
     runs-on: ubuntu-latest
     needs: [build-deb-rpm-appimage, build-arch, build-windows, build-android]
+    if: github.event_name != 'pull_request'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
