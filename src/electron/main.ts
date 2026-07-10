@@ -14,11 +14,16 @@ import { AxiosApiHandler } from 'src/common/app/api';
 
 async function addAutostartIfApplicable(log: (logs: string[]) => void, settings: Settings) {
     try {
+        if (!app.isPackaged) {
+            log(['Skipping add to autostart in debug mode'])
+            return;
+        }
+
         const autostart = await settings.getBoolean('autostart');
         const appPath = app.getPath('exe');
 
         let autoLaunch = new AutoLaunch({
-            name: 'live-tennis', // Name should match your app's name in package.json
+            name: 'live-tennis',
             path: appPath,
         });
 

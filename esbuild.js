@@ -124,7 +124,7 @@ async function buildGnome() {
   }
 
   try {
-    execSync(`ts-node ${path.join(distDir, 'schema.js')}`, { stdio: 'inherit' });
+    execSync(`node ${path.join(distDir, 'schema.js')}`, { stdio: 'inherit' });
   } catch (error) {
     console.error('Schema generation failed!');
     process.exit(1);
