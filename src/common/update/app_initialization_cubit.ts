@@ -7,16 +7,23 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
   private baseGitHubUrl: string;
   private userContentUrl: string;
   private headers = { Accept: 'application/vnd.github.v3+json' };
+  private baseAssetName: string;
+  private env: UpdateEnvironment;
+  private log: (logs: string[]) => void;
 
   constructor(
-    private organization: string,
-    private repo: string,
-    private baseAssetName: string,
-    private env: UpdateEnvironment
+    organization: string,
+    repo: string,
+    baseAssetName: string,
+    env: UpdateEnvironment,
+    log: (logs: string[]) => void
   ) {
     super(new AppInitializationStatus(AppInitializationState.initialization));
     this.baseGitHubUrl = `https://api.github.com/repos/${organization}/${repo}`;
     this.userContentUrl = `https://raw.githubusercontent.com/${organization}/${repo}`;
+    this.baseAssetName = baseAssetName;
+    this.env = env;
+    this.log = log;
   }
 
   async initialize() {
@@ -24,6 +31,7 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
       new AppInitializationStatus(AppInitializationState.initialization)
     );
     if (!this.env.isUpdateCheckSupported()) {
+      this.log(['Update check not supported on this platform']);
       this.emitInitialized();
       return;
     }
@@ -40,7 +48,22 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
     try {
       const current = await this.env.getCurrentInfo();
       const releases = await this._fetchReleases();
+      if (!Array.isArray(releases)) {
+        this.emitState(
+          new AppInitializationStatus(
+            AppInitializationState.updateCheckFailed,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            releases.message,
+          )
+        );
+        return;
+      }
+
       if (!releases.length) {
+        this.log(['No releases are available']);
         this.emitInitialized();
         return;
       }
@@ -67,6 +90,12 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
       }
 
       if (!isUpdateAvailable) {
+        this.log([
+          'No new update is available',
+          currentVersion,
+          '==',
+          latestVersion,
+        ]);
         this.emitInitialized();
         return;
       }
@@ -89,13 +118,17 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
       this.emitState(
         new AppInitializationStatus(
           AppInitializationState.updateCheckFailed,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
           String(e)
         )
       );
     }
   }
 
-  private async _fetchReleases(): Promise<any[]> {
+  private async _fetchReleases(): Promise<any[]|[key: string, any]> {
     const r = await fetch(`${this.baseGitHubUrl}/releases?per_page=10`, {
       headers: this.headers as any,
     });

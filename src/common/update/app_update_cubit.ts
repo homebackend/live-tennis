@@ -5,7 +5,8 @@ import { UpdateEnvironment } from './update_environment';
 export abstract class AppUpdateCubit extends Cubit<AppUpdateStatus> {
   constructor(
     protected upgradeFileName: string,
-    protected env: UpdateEnvironment
+    protected env: UpdateEnvironment,
+    protected log: (logs: string[]) => void
   ) {
     super(new AppUpdateStatus(AppUpdateState.userInput));
   }
