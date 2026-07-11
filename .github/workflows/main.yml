@@ -120,11 +120,30 @@ jobs:
       - name: Create Android apk
         run: npm ci && npm run package:android
 
+      - name: Sign Android APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_android_apk
+        with:
+          releaseDirectory: react-native-app/android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
+          alias: ${{ secrets.ANDROID_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"  
+
+      - name: Overwrite Unsigned APK with Signed APK
+        run: |
+          mv "${{ steps.sign_android_apk.outputs.signedReleaseFile }}" \
+             react-native-app/android/app/build/outputs/apk/release/live-tennis-*-android-release.apk
+
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
           name: android
-          path: react-native-app/android/app/build/outputs/apk/*/app-*.apk
+          path: |
+            react-native-app/android/app/build/outputs/apk/*/live-tennis-*release.apk
+            react-native-app/android/app/build/outputs/apk/*/live-tennis-*debug.apk
 
   # Job 5: Create GitHub Release (depends on all builds finishing)
   create-release:
@@ -167,4 +186,4 @@ jobs:
             artifacts/linux-packages-deb-rpm-appimage/dist-gnome/*.zip
             artifacts/linux-packages-arch/*.pacman
             artifacts/windows-installer/*.exe
-            artifacts/android/*/app-*.apk
+            artifacts/android/*/*.apk
