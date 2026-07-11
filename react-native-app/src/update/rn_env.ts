@@ -17,8 +17,8 @@ export class RNUpdateEnv implements UpdateEnvironment {
     };
   }
 
-  getTargetAssetName(base: string): string {
-    return `${base}-android.apk`;
+  getTargetAssetName(base: string, version: string): string {
+    return `${base}-${version}-android-release.apk`;
   }
 
   async fetchRemoteBuildNumber(

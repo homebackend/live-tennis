@@ -51,17 +51,16 @@ export async function startUpdateWithUI(
           }, 800);
         } else {
           win.webContents.send(
-            'curent-status',
+            'current-status',
             `${s.event?.status}: ${s.event?.value}`
           );
         }
         break;
       case AppUpdateState.skipped:
-        win.close();
         mainWindow();
+        win.close();
         break;
       case AppUpdateState.error:
-        win.close();
         await dialog.showMessageBox({
           type: 'error',
           title: 'Installation failed',
@@ -69,6 +68,7 @@ export async function startUpdateWithUI(
           buttons: ['OK'],
         });
         mainWindow();
+        win.close();
         break;
     }
   };

@@ -8,7 +8,7 @@ export interface CurrentAppInfo {
 export interface UpdateEnvironment {
   isUpdateCheckSupported(): boolean;
   getCurrentInfo(): Promise<CurrentAppInfo>;
-  getTargetAssetName(baseAssetName: string): string;
+  getTargetAssetName(baseAssetName: string, version: string): string;
   getLinuxFamily?(): LinuxFamily;
   fetchRemoteBuildNumber?(tag: string, userContentUrl: string): Promise<number>;
   findEscalator?(): Promise<string | null>;

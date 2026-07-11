@@ -22,7 +22,7 @@
     "sync": "node sync.js",
     "build": "node esbuild.js",
     "start": "npm run start:electron",
-    "start:electron": "npm run build && cross-env NODE_OPTIONS= NODE_ENV=development electron dist/main.cjs",
+    "start:electron": "npm run build && cross-env NODE_OPTIONS= NODE_ENV=development electron .",
     "start:metro": "cd react-native-app && npm run start",
     "start:android": "cd react-native-app && npx react-native run-android",
     "start:android:emulator": "cd /opt/android-sdk/tools && emulator -avd $(emulator -list-avds | head -1)",

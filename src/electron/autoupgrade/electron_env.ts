@@ -5,6 +5,7 @@ import {
   UpdateEnvironment,
 } from '../../common/update/update_environment';
 import { LinuxFamily } from 'src/common/update/platform';
+import { execFile } from 'node:child_process';
 
 export class ElectronUpdateEnv implements UpdateEnvironment {
   isUpdateCheckSupported() {
@@ -14,17 +15,17 @@ export class ElectronUpdateEnv implements UpdateEnvironment {
   async getCurrentInfo(): Promise<CurrentAppInfo> {
     return {
       version: app.getVersion(),
-      buildNumber: process.env.BUILD_NUMBER || '0'
+      buildNumber: process.env.BUILD_NUMBER || '0',
     };
   }
 
-  getTargetAssetName(base: string): string {
-    if (process.platform === 'win32') return `${base}-windows-x64.zip`;
+  getTargetAssetName(base: string, version: string): string {
+    if (process.platform === 'win32') return `${base}-${version}-win-x64.exe`;
     if (process.platform === 'linux') {
       const family = this.getLinuxFamily();
-      if (family === 'arch') return `${base}-linux-x64.pkg.tar.zst`;
-      if (family === 'debian') return `${base}-linux-x64.deb`;
-      return `${base}-linux-x64.tar.gz`;
+      if (family === 'arch') return `${base}-${version}-linux-x64.pacman`;
+      if (family === 'debian') return `${base}-${version}-amd64.deb`;
+      return `${base}-${version}-x86_64.AppImage `;
     }
     return '';
   }
@@ -36,6 +37,16 @@ export class ElectronUpdateEnv implements UpdateEnvironment {
       if (f.includes('debian') || f.includes('ubuntu')) return 'debian';
     } catch {}
     return 'unknown';
+  }
+
+  async findEscalator(): Promise<string | null> {
+    for (const c of ['pkexec', 'sudo', 'doas']) {
+      try {
+        execFile('which', [c]);
+        return c;
+      } catch {}
+    }
+    return null;
   }
 
   openDownloadUrl(url: string) {

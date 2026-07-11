@@ -56,7 +56,7 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
             undefined,
             undefined,
             undefined,
-            releases.message,
+            releases.message
           )
         );
         return;
@@ -128,7 +128,7 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
     }
   }
 
-  private async _fetchReleases(): Promise<any[]|[key: string, any]> {
+  private async _fetchReleases(): Promise<any[] | [key: string, any]> {
     const r = await fetch(`${this.baseGitHubUrl}/releases?per_page=10`, {
       headers: this.headers as any,
     });
@@ -143,7 +143,10 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
       const r = await fetch(assetsUrl, { headers: this.headers as any });
       if (!r.ok) return fallback;
       const assets = await r.json();
-      const target = this.env.getTargetAssetName(this.baseAssetName);
+      const target = this.env.getTargetAssetName(
+        this.baseAssetName,
+        release.tag_name.replace(/^v/, '')
+      );
       const hit = assets.find((a: any) => a.name === target);
       return hit?.browser_download_url || fallback;
     } catch {

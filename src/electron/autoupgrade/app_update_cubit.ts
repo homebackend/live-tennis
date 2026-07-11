@@ -20,7 +20,8 @@ export class ElectronAppUpdateCubit extends AppUpdateCubit {
   }
 
   async tryLinuxUpdate(url: string) {
-    const tmpPath = path.join(os.tmpdir(), this.upgradeFileName);
+    const fileName = path.basename(new URL(url).pathname);
+    const tmpPath = path.join(os.tmpdir(), fileName);
     try {
       const ok = await this._download(url, tmpPath);
       if (!ok) return;
