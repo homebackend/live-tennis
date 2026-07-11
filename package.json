@@ -84,6 +84,7 @@
   "build": {
     "appId": "live-tennis-neerajcd@gmail.com",
     "productName": "Live Tennis",
+    "executableName": "live-tennis",
     "artifactName": "live-tennis-${version}-${os}-${arch}.${ext}",
     "files": [
       "dist/**/*",

@@ -118,6 +118,17 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }*/
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            String customAppName = 'live-tennis'
+
+            String versionName = variant.versionName
+            String buildType = variant.buildType.name
+
+            outputFileName = "${customAppName}-${versionName}-android-${buildType}.apk"
+        }
+    }
 }
 
 /*
