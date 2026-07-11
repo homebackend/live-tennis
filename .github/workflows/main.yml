@@ -133,7 +133,6 @@ jobs:
           BUILD_TOOLS_VERSION: "34.0.0"  
 
       - name: Overwrite Unsigned APK with Signed APK
-        if: matrix.target == 'apk'
         run: |
           mv "${{ steps.sign_android_apk.outputs.signedReleaseFile }}" \
              react-native-app/android/app/build/outputs/apk/release/live-tennis-*-android-release.apk
