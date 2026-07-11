@@ -141,7 +141,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android
-          path: react-native-app/android/app/build/outputs/apk/*/live-tennis-*.apk
+          path: |
+            react-native-app/android/app/build/outputs/apk/*/live-tennis-*release.apk
+            react-native-app/android/app/build/outputs/apk/*/live-tennis-*debug.apk
 
   # Job 5: Create GitHub Release (depends on all builds finishing)
   create-release:
@@ -184,4 +186,4 @@ jobs:
             artifacts/linux-packages-deb-rpm-appimage/dist-gnome/*.zip
             artifacts/linux-packages-arch/*.pacman
             artifacts/windows-installer/*.exe
-            artifacts/android/*/app-*.apk
+            artifacts/android/*/*.apk
