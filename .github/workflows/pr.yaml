@@ -29,7 +29,9 @@ jobs:
           java-version: '17'
 
       - name: Install JS deps
-        run: npm ci
+        run: |
+          cd .. && npm ci && cd -
+          npm ci
 
       - name: Generate flags
         run: npm run flags
