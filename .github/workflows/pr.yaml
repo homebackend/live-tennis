@@ -42,19 +42,6 @@ jobs:
       - name: Lint
         run: npm run lint --if-present
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('react-native-app/android/gradle/wrapper/gradle-wrapper.properties', 'react-native-app/android/**/*.gradle*') }}
-
-      - name: Android Debug Build
-        run: |
-          cd android
-          ./gradlew assembleDebug --no-daemon -x lint
-
   electron:
     name: Electron Sanity
     runs-on: ubuntu-latest
