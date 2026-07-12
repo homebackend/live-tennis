@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f3f3f3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      .dialog {
+        width: 460px;
+        max-height: 460px;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 24px 12px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .title svg {
+        color: #6750a4;
+      }
+      .content {
+        padding: 0 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: 1;
+        min-height: 0;
+      }
+      .label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #444;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .copyable {
+        flex: 1;
+        background: #f1eef7;
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .copyable:hover {
+        background: #e8e0f3;
+      }
+      .divider {
+        height: 1px;
+        background: #e6e0eb;
+        margin: 4px 0;
+      }
+      .changelog-wrap {
+        flex: 1;
+        min-height: 0;
+        background: rgba(231, 224, 236, 0.35);
+        border: 1px solid #d9d0e3;
+        border-radius: 8px;
+        padding: 12px;
+        overflow: auto;
+      }
+      .changelog {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 12.5px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 16px 24px;
+      }
+      button {
+        border: 0;
+        border-radius: 8px;
+        padding: 9px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .btn-text {
+        background: transparent;
+        color: #6750a4;
+      }
+      .btn-text:hover {
+        background: #f3edff;
+      }
+      .btn-filled {
+        background: #6750a4;
+        color: white;
+      }
+      .btn-filled:hover {
+        background: #5a4592;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dialog">
+      <div class="title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M21 10.5V9L12 3 3 9v1.5l9 5.25 9-5.25Zm-9 7.5L3 12.75V14.5l9 5.25 9-5.25v-1.75l-9 5.25Z"
+          />
+        </svg>
+        New Update Available
+      </div>
+
+      <div class="content">
+        <div class="label" id="version">Latest Version: Unknown</div>
+
+        <div id="linkRow" class="row" style="display: none">
+          <span class="label" style="white-space: nowrap">Package Link:</span>
+          <div class="copyable" id="linkBox" title="Click to copy">
+            <span id="linkText"></span><span>⎙</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="label">Changelog / Commits:</div>
+
+        <div class="changelog-wrap">
+          <div class="changelog" id="changelog">
+            No direct commit information provided.
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-text" id="quitBtn">Quit</button>
+        <button class="btn-text" id="dismissBtn">Dismiss</button>
+        <button class="btn-filled" id="proceedBtn">Install Update</button>
+      </div>
+    </div>
+
+    <script>
+      let currentData = null;
+
+      function render(data) {
+        currentData = data;
+        document.getElementById('version').textContent =
+          `Latest Version: ${data.latestVersion || 'Unknown'}`;
+        if (data.downloadUrl) {
+          document.getElementById('linkRow').style.display = 'flex';
+          document.getElementById('linkText').textContent = data.downloadUrl;
+        }
+        document.getElementById('changelog').textContent =
+          data.changeLog || 'No direct commit information provided.';
+        document.getElementById('proceedBtn').textContent = data.downloadUrl
+          ? 'Install Update'
+          : 'OK';
+      }
+
+      document.getElementById('linkBox').onclick = async () => {
+        if (!currentData?.downloadUrl) return;
+        await navigator.clipboard.writeText(currentData.downloadUrl);
+        const el = document.getElementById('linkText');
+        const orig = el.textContent;
+        el.textContent = 'Copied!';
+        setTimeout(() => (el.textContent = orig), 1000);
+      };
+
+      document.getElementById('quitBtn').onclick = () =>
+        window.electronAPIUpdate.quit();
+      document.getElementById('dismissBtn').onclick = () =>
+        window.electronAPIUpdate.skipUpdate();
+      document.getElementById('proceedBtn').onclick = () => {
+        if (currentData?.downloadUrl)
+          window.electronAPIUpdate.startUpdate(currentData.downloadUrl);
+        else window.electronAPIUpdate.skipUpdate();
+      };
+
+      window.electronAPIUpdate.onUpdateData(render);
+    </script>
+  </body>
+</html>

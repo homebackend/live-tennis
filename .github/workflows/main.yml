@@ -9,6 +9,8 @@ on:
       - '.github/workflows/*.yml'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - '.github/**'
   workflow_dispatch:
 
 jobs:

@@ -1,7 +1,7 @@
 // esbuild.js
-import { build } from "esbuild";
+import { build } from 'esbuild';
 import { ESLint } from 'eslint';
-import { type } from "os";
+import { type } from 'os';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { execSync } from 'child_process'; // Import execSync
@@ -22,7 +22,10 @@ async function copyCommonAssets(outDir, cssTargetName) {
   const cwd = process.cwd();
   await fs.copy(path.join(cwd, 'assets', 'icons'), path.join(outDir, 'icons'));
   await fs.copy(path.join(cwd, 'assets', 'flags'), path.join(outDir, 'flags'));
-  await fs.copy(path.join(cwd, 'src', 'common', 'style.css'), path.join(outDir, cssTargetName));
+  await fs.copy(
+    path.join(cwd, 'src', 'common', 'style.css'),
+    path.join(outDir, cssTargetName)
+  );
 }
 
 async function buildElectron() {
@@ -39,14 +42,24 @@ async function buildElectron() {
     ...commonBuildOptions,
     platform: 'node',
     format: 'cjs',
-    entryPoints: ['./src/electron/menu_preload.ts', './src/electron/live_view_preload.ts', './src/electron/prefs_preload.ts'],
+    entryPoints: [
+      './src/electron/menu_preload.ts',
+      './src/electron/live_view_preload.ts',
+      './src/electron/prefs_preload.ts',
+      './src/electron/autoupgrade/update/preload.ts',
+      './src/electron/autoupgrade/download/preload.ts',
+    ],
     external: ['electron'],
   }).catch(() => process.exit(1));
 
   await build({
     ...commonBuildOptions,
     platform: 'browser',
-    entryPoints: ['./src/electron/menu_renderer.ts', './src/electron/live_view_renderer.ts', './src/electron/prefs_renderer.ts'],
+    entryPoints: [
+      './src/electron/menu_renderer.ts',
+      './src/electron/live_view_renderer.ts',
+      './src/electron/prefs_renderer.ts',
+    ],
   });
 
   try {
@@ -58,7 +71,7 @@ async function buildElectron() {
         }
 
         return src.endsWith('.html') || src.endsWith('.css');
-      }
+      },
     });
 
     console.log('Assets copied to dist directory successfully.');
@@ -83,9 +96,9 @@ async function lintFiles(files) {
           'error',
           'always',
           { exceptAfterSingleLine: false },
-        ]
-      }
-    }
+        ],
+      },
+    },
   });
 
   const results = await eslint.lintFiles(Object.values(files));
@@ -97,7 +110,7 @@ async function buildGnome() {
 
   const entryPoints = {
     extension: 'src/gnome/extension.ts',
-    prefs: 'src/gnome/prefs.ts'
+    prefs: 'src/gnome/prefs.ts',
   };
 
   await build({
@@ -106,10 +119,12 @@ async function buildGnome() {
     outdir: distDir,
     platform: 'node',
     target: ['es2022'],
-    external: ['@girs/*', 'gi', "gi://*", "resource://*"],
+    external: ['@girs/*', 'gi', 'gi://*', 'resource://*'],
   });
 
-  const genFiles = Object.values(entryPoints).map(file => distDir + '/' + path.basename(file, '.ts') + '.js');
+  const genFiles = Object.values(entryPoints).map(
+    (file) => distDir + '/' + path.basename(file, '.ts') + '.js'
+  );
   lintFiles(genFiles);
 
   await build({
@@ -118,22 +133,25 @@ async function buildGnome() {
     outdir: distDir,
   });
 
-  const schemaDir = path.join(distDir, 'schemas')
+  const schemaDir = path.join(distDir, 'schemas');
   if (!fs.existsSync(schemaDir)) {
     fs.mkdirSync(schemaDir, { recursive: true });
   }
 
   try {
-    execSync(`ts-node ${path.join(distDir, 'schema.js')}`, { stdio: 'inherit' });
+    execSync(`node ${path.join(distDir, 'schema.js')}`, { stdio: 'inherit' });
   } catch (error) {
     console.error('Schema generation failed!');
     process.exit(1);
   }
 
   await copyCommonAssets(distDir, 'stylesheet.css');
-  await fs.rm(`${distDir}/icons/linux`, { recursive: true })
-  await fs.rm(`${distDir}/icons/win`, { recursive: true })
-  await fs.copy(path.join(process.cwd(), 'src', 'gnome', 'metadata.json'), path.join(distDir, 'metadata.json'));
+  await fs.rm(`${distDir}/icons/linux`, { recursive: true });
+  await fs.rm(`${distDir}/icons/win`, { recursive: true });
+  await fs.copy(
+    path.join(process.cwd(), 'src', 'gnome', 'metadata.json'),
+    path.join(distDir, 'metadata.json')
+  );
 
   console.log('GNOME extension build complete.');
 }
