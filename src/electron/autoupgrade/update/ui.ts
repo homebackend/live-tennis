@@ -4,8 +4,12 @@ import path from 'path';
 import { ElectronUpdateEnv } from '../electron_env';
 import { AppInitializationCubit } from 'src/common/update/app_initialization_cubit';
 import { ElectronAppUpdateCubit } from '../app_update_cubit';
-import { AppInitializationState } from 'src/common/update/types';
+import {
+  AppInitializationState,
+  AppInitializationStatus,
+} from 'src/common/update/types';
 import { startUpdateWithUI } from '../download/ui';
+import { organization, repo, baseAssetName } from 'src/common/update/constants';
 
 type UpdateData = {
   currentVersion: string;
@@ -75,37 +79,37 @@ export async function checkForUpdateAndStart(
   log(['Checking if update is available']);
   const env = new ElectronUpdateEnv();
   const initCubit = new AppInitializationCubit(
-    'homebackend',
-    'live-tennis',
-    'live-tennis',
+    organization,
+    repo,
+    baseAssetName,
     env,
     log
   );
-  const updateCubit = new ElectronAppUpdateCubit('live-tennis', env, log);
+  const updateCubit = new ElectronAppUpdateCubit(baseAssetName, env, log);
 
   function splashCleanup() {
     if (splash && !splash.isDestroyed()) splash.close();
   }
 
-  initCubit.on('state', async (status: any) => {
+  initCubit.on('state', async (status: AppInitializationStatus) => {
     if (status.state === AppInitializationState.showUpdateDetails) {
       const current = await env.getCurrentInfo();
 
       if (splash && !splash.isDestroyed()) splash.hide();
-      log(['Update available', current.version, '->', status.latestVersion]);
+      log(['Update available', current.version, '->', status.latestVersion!]);
       const action = await showUpdateWindow({
         currentVersion: current.version,
-        latestVersion: status.latestVersion,
-        changeLog: status.changeLog,
-        downloadUrl: status.downloadUrl,
+        latestVersion: status.latestVersion!,
+        changeLog: status.changeLog!,
+        downloadUrl: status.downloadUrl!,
       });
 
       splashCleanup();
 
       if (action === 'update') {
         log(['Trying update']);
-        await startUpdateWithUI(status.downloadUrl, updateCubit, mainWindow);
-        await updateCubit.tryUpdate(status.downloadUrl);
+        await startUpdateWithUI(status.downloadUrl!, updateCubit, mainWindow);
+        await updateCubit.tryUpdate(status.downloadUrl!);
       } else {
         log(['Update skipped']);
         mainWindow();
@@ -117,7 +121,7 @@ export async function checkForUpdateAndStart(
       await dialog.showMessageBox({
         type: 'error',
         title: 'Update Check Failed',
-        message: status.error,
+        message: status.error!,
         buttons: ['OK'],
       });
       splashCleanup();

@@ -1,15 +1,15 @@
 import { AppUpdateCubit } from '../../../src/common/update/app_update_cubit';
 import RNFetchBlob from 'rn-fetch-blob';
-import APKInstaller from 'react-native-apk-install';
 import {
   AppUpdateState,
   AppUpdateStatus,
   OtaEvent,
   OtaStatus,
 } from '../../../src/common/update/types';
-import { Linking, Platform } from 'react-native';
+import { Linking, NativeModules, Platform } from 'react-native';
+const { ApkInstaller } = NativeModules;
 
-export class RNUpdateCubit extends AppUpdateCubit {
+export class RNAppUpdateCubit extends AppUpdateCubit {
   async tryUpdate(downloadUrl: string): Promise<void> {
     if (Platform.OS === 'android') {
       await this.tryOtaUpdate(downloadUrl);
@@ -88,7 +88,7 @@ export class RNUpdateCubit extends AppUpdateCubit {
         ),
       );
 
-      await APKInstaller.install(apkPath);
+      await ApkInstaller.install(apkPath);
 
       this.emitState(
         new AppUpdateStatus(
