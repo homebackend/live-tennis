@@ -11,7 +11,7 @@ import {
   AppInitializationState,
   AppUpdateState,
   OtaStatus,
-} from '../../../src/common/update/types';
+} from '@common/update/types';
 
 type Props = {
   currentVersion: string;

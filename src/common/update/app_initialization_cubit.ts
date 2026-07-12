@@ -128,7 +128,7 @@ export class AppInitializationCubit extends Cubit<AppInitializationStatus> {
     }
   }
 
-  private async _fetchReleases(): Promise<any[] | [key: string, any]> {
+  private async _fetchReleases(): Promise<any[] | { message?: string }> {
     const r = await fetch(`${this.baseGitHubUrl}/releases?per_page=10`, {
       headers: this.headers as any,
     });

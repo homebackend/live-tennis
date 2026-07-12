@@ -1,11 +1,11 @@
-import { AppUpdateCubit } from '../../../src/common/update/app_update_cubit';
+import { AppUpdateCubit } from '@common/update/app_update_cubit';
 import RNFetchBlob from 'rn-fetch-blob';
 import {
   AppUpdateState,
   AppUpdateStatus,
   OtaEvent,
   OtaStatus,
-} from '../../../src/common/update/types';
+} from '@common/update/types';
 import { Linking, NativeModules, Platform } from 'react-native';
 const { ApkInstaller } = NativeModules;
 

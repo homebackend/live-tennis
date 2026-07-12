@@ -1,23 +1,26 @@
-import { EventEmitter } from 'events';
-
-export class Cubit<S> extends EventEmitter {
+export class Cubit<S> {
   private _state: S;
+  private stateListeners = new Set<(s: S) => void>();
 
-  constructor(initialState: S) {
-    super();
-    this._state = initialState;
-  }
+  constructor(initialState: S) { this._state = initialState; }
+  get state() { return this._state; }
 
-  get state() {
-    return this._state;
-  }
-
-  emitState(next: S) {
+  protected emitState(next: S) {
     this._state = next;
-    this.emit('state', next);
+    this.stateListeners.forEach(l => l(next));
   }
 
-  close() {
-    this.removeAllListeners();
+  on(event: 'state', listener: (s: S) => void): { remove: () => void } {
+    this.stateListeners.add(listener);
+    return {
+      remove: () => this.stateListeners.delete(listener)
+    };
   }
+
+  off(event: 'state', listener: (s: S) => void) {
+    this.stateListeners.delete(listener);
+  }
+
+  removeAllListeners() { this.stateListeners.clear(); }
+  close() { this.removeAllListeners(); }
 }

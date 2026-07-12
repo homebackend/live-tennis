@@ -1,9 +1,9 @@
 import { ReactElement } from "react";
 
 import { RNElement } from "./renderer";
-import { LiveViewRendererCommon } from '../../src/common/live_view_renderer';
-import { TennisMatch } from "../../src/common/types";
-import { StyleKeys } from "../../src/common/style_keys";
+import { LiveViewRendererCommon } from '@common/live_view_renderer';
+import { TennisMatch } from "@common/types";
+import { StyleKeys } from "@common/style_keys";
 import { getCssThemeStyles, LiveTennisTheme, } from './style';
 import React from "react";
 import { ScrollView } from "react-native";

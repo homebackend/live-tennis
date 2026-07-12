@@ -13,18 +13,18 @@ import { CountryPreferencesScreen } from './src/prefs_countries';
 import { useColorScheme } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { SplashScreen } from './src/splash/splash';
-import { AppInitializationCubit } from '../src/common/update/app_initialization_cubit';
+import { AppInitializationCubit } from '@common/update/app_initialization_cubit';
 import {
   organization,
   repo,
   baseAssetName,
-} from '../src/common/update/constants';
+} from '@common/update/constants';
 import { RNUpdateEnv } from './src/update/rn_env';
 import { RNAppUpdateCubit } from './src/update/app_update_cubit';
 import {
   AppInitializationState,
   AppInitializationStatus,
-} from '../src/common/update/types';
+} from '@common/update/types';
 import { AppUpdateDialog } from './src/update/components/app_update_dialog';
 import { UpdateScreen } from './src/update/components/update_screen';
 import { ErrorDialog } from './src/update/components/error_dialog';
@@ -80,7 +80,7 @@ function App() {
             }
 
             if (status.state === AppInitializationState.updateCheckFailed) {
-              setError(status.error);
+              setError(status.error!);
               setRoute('error');
             }
 

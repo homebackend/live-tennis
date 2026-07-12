@@ -1,5 +1,5 @@
-import { LiveViewManager } from "../../src/common/live_view_updater";
-import { TennisMatch } from "../../src/common/types";
+import { LiveViewManager } from "@common/live_view_updater";
+import { TennisMatch } from "@common/types";
 
 export class RNLiveViewManager implements LiveViewManager {
     private _fetcherId?: number;
