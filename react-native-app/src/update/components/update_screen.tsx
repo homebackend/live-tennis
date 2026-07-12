@@ -16,7 +16,7 @@ export const UpdateScreen = ({ updateCubit, onBack, onError }: any) => {
       sub?.remove?.();
       updateCubit.close();
     };
-  }, []);
+  });
 
   return (
     <View
