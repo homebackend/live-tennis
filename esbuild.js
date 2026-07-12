@@ -11,7 +11,7 @@ const outDir = path.join(process.cwd(), 'dist');
 const commonBuildOptions = {
   bundle: true,
   format: 'esm',
-  sourcemap: true,
+  //sourcemap: true,
   outdir: 'dist',
   platform: 'node',
   //logLevel: 'verbose',
