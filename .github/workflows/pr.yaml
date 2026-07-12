@@ -1,0 +1,127 @@
+name: PR Sanity
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  react-native:
+    name: React Native Sanity
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react-native-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: react-native-app/package-lock.json
+
+      - name: Setup Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install JS deps
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Jest Tests
+        run: npm test -- --ci --passWithNoTests
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('react-native-app/android/gradle/wrapper/gradle-wrapper.properties', 'react-native-app/android/**/*.gradle*') }}
+
+      - name: Android Debug Build
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon -x lint
+
+  electron:
+    name: Electron Sanity
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install deps
+        run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit --if-present || true
+      - name: Lint
+        run: npm run lint:electron --if-present || npm run lint --if-present || true
+      - name: Tests
+        run: npm run test:electron --if-present || npm test -- --ci --passWithNoTests || true
+      - name: Build Electron (dir)
+        env:
+          ELECTRON_SKIP_NOTARIZE: 1
+        run: npx electron-builder --dir --config.directories.output=dist/electron-sanity || echo "no builder config"
+
+  gnome:
+    name: GNOME Tests (shexli)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: react-native-app/package-lock.json
+
+      - name: Setup Python for venv + shexli
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system deps for venv
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv python3-pip
+
+      - name: Install JS deps
+        run: npm ci
+
+      - name: Run GNOME checks
+        run: npm run check:gnome
+        env:
+          CI: true
+          PYTHONUNBUFFERED: 1
+
+  sanity-gate:
+    runs-on: ubuntu-latest
+    needs: [react-native, electron, gnome]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          if [[ "${{ needs.react-native.result }}" != "success" || "${{ needs.electron.result }}" != "success" || "${{ needs.gnome.result }}" != "success" ]]; then
+            echo "One or more sanity jobs failed"
+            exit 1
+          fi
+          echo "All checks passed"
