@@ -93,12 +93,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: react-native-app/package-lock.json
 
-      - name: Setup Python for venv + shexli
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
       - name: Install system deps for venv
         run: |
           sudo apt-get update
