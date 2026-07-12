@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import {
-  AppUpdateState,
-  AppUpdateStatus,
-} from '../../../../src/common/update/types';
+import { AppUpdateState, AppUpdateStatus } from '@common/update/types';
 
 export const UpdateScreen = ({ updateCubit, onBack, onError }: any) => {
   const [status, setStatus] = useState(updateCubit.state);
@@ -14,7 +11,7 @@ export const UpdateScreen = ({ updateCubit, onBack, onError }: any) => {
       if (s.state === AppUpdateState.skipped) onBack();
       if (s.state === AppUpdateState.error) onError(s.error);
     });
-    
+
     return () => {
       sub?.remove?.();
       updateCubit.close();

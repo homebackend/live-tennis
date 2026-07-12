@@ -3,7 +3,7 @@ import { Linking } from 'react-native';
 import {
   UpdateEnvironment,
   CurrentAppInfo,
-} from '../../../src/common/update/update_environment';
+} from '@common/update/update_environment';
 
 export class RNUpdateEnv implements UpdateEnvironment {
   isUpdateCheckSupported() {

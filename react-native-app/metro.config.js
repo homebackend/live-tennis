@@ -7,6 +7,7 @@ const workspaceRoot = path.resolve(projectRoot, '..');
 const commonCodeRoot = path.resolve(workspaceRoot, 'src', 'common');
 const libCodeRoot = path.resolve(workspaceRoot, 'src', 'lib');
 const parentNodeModules = path.resolve(workspaceRoot, 'node_modules');
+
 const defaultConfig = getDefaultConfig(projectRoot);
 
 const { assetExts, sourceExts } = defaultConfig.resolver;
@@ -15,12 +16,17 @@ const { assetExts, sourceExts } = defaultConfig.resolver;
 const config = {
   watchFolders: [commonCodeRoot, libCodeRoot, parentNodeModules],
   transformer: {
-    babelTransformerPath: require.resolve("react-native-css-transformer")
+    babelTransformerPath: require.resolve('react-native-css-transformer'),
   },
-
   resolver: {
     assetExts: assetExts,
-    sourceExts: [...sourceExts, "css"],
+    sourceExts: [...sourceExts, 'css'],
+    extraNodeModules: {
+      '@common': commonCodeRoot,
+      '@lib': libCodeRoot,
+      common: commonCodeRoot, // if you also use common/*
+      lib: libCodeRoot,
+    },
     nodeModulesPaths: [
       path.resolve(projectRoot, 'node_modules'),
       parentNodeModules,
