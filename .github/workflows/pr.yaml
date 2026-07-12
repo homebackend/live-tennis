@@ -31,6 +31,9 @@ jobs:
       - name: Install JS deps
         run: npm ci
 
+      - name: Generate flags
+        run: npm run flags
+
       - name: Typecheck
         run: npx tsc --noEmit
 
