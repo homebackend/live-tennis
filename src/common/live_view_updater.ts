@@ -1,4 +1,4 @@
-import { LiveTennis, QueryResponseType } from './fetcher';
+import { LiveTennis, QueryResponseType, QueryStatus } from './fetcher';
 import { Runner } from './runner';
 import { Settings } from './settings';
 import { TennisMatch } from './types';
@@ -122,12 +122,40 @@ export class LiveViewUpdater<TF extends TTFetcher> {
       }
 
       const [allGood, statuses] = result.value;
+
+      const cachedMatches = this._currentMatchesData.filter(
+        (m) =>
+          statuses.has(m.source) &&
+          statuses.get(m.source) != QueryStatus.success
+      );
+
       if (allGood) {
         // Only remove stale entries if API call(s) were success
-        await this._runner.filterAutoEvents((id) => eventIds.has(id));
-        await this._runner.filterLiveViewMatches((id) => matchIds.has(id));
+        await this._runner.filterAutoEvents(
+          (id) =>
+            eventIds.has(id) || cachedMatches.some((m) => m.event.id == id)
+        );
+        await this._runner.filterLiveViewMatches(
+          (id) =>
+            matchIds.has(id) ||
+            cachedMatches.some(
+              (m) => this._runner.uniqMatchId(m.event, m) === id
+            )
+        );
       }
       this._runner.updateFetchStatuses(statuses);
+
+      // Add all skipped and failed tour matches to keep
+      // rest of the code happy. Sort the list to keep
+      // the relative ordering same across runs.
+      matchesData.push(...cachedMatches);
+      matchesData.sort((a, b) => {
+        if (a.event.id === b.event.id) {
+          return a.id.localeCompare(b.id);
+        } else {
+          return a.event.id.localeCompare(b.event.id);
+        }
+      });
 
       this._currentMatchesData = matchesData;
       await this._updateFloatingWindows(this._currentMatchesData);
@@ -186,7 +214,7 @@ export class LiveViewUpdater<TF extends TTFetcher> {
     return (
       !(await this._settings.getBoolean('enabled')) ||
       ((await this._settings.getBoolean('auto-hide-no-live-matches')) &&
-        selectedMatches.every((m) => !m.isLive))
+        selectedMatches.length == 0)
     );
   }
 

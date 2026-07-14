@@ -1,3 +1,4 @@
+import { QueryStatus } from './fetcher';
 import { Settings } from './settings';
 import { TennisEvent, TennisMatch } from './types';
 import { SortedStringList } from './util';
@@ -44,7 +45,7 @@ export abstract class Runner {
   abstract setMatchSelection(matchId: string, selection: boolean): void;
   abstract removeEventMenuItem(event: TennisEvent): void;
   abstract removeMatchMenuItem(matchId: string): void;
-  abstract updateFetchStatuses(statuses: Map<string, boolean>): void;
+  abstract updateFetchStatuses(statuses: Map<string, QueryStatus>): void;
   abstract destroy(): void;
 
   protected lastRefreshTimeDisplay(): string {
@@ -186,10 +187,11 @@ export abstract class Runner {
     // this.log(['Updating match', event.title, event.id, match.displayName, match.id]);
 
     const matchId = this.uniqMatchId(event, match);
+    const currentSelection = await this.settings.getStrv('selected-matches');
     this.updateMatchMenuItem(matchId, match);
 
     // If match is selected and match has finished
-    if (this.isMatchSelected(matchId) && match.hasFinished) {
+    if (currentSelection.includes(matchId) && !match.isLive) {
       // If menu item is checked means live view is enabled
       // stop selection after keep-completed-duration minutes
       const matchId = this.uniqMatchId(event, match);
@@ -240,7 +242,7 @@ export abstract class Runner {
   }
 
   async removeMatch(event: TennisEvent, match: TennisMatch) {
-    // this.log(['Removinging match', event.title, match.displayName, match.id]);
+    // this.log(['Removing match', event.title, match.displayName, match.id]);
 
     const matchId = this.uniqMatchId(event, match);
     await this.filterLiveViewMatches((id) => id !== matchId);

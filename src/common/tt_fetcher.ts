@@ -122,6 +122,7 @@ export abstract class TTFetcher extends FetcherCommon implements Fetcher {
       displayScore: '',
       url: event.url,
       h2hUrl: '',
+      source: 'tennis-temple',
     };
   }
 

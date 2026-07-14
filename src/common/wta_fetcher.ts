@@ -288,6 +288,7 @@ export class WtaFetcher extends FetcherCommon implements Fetcher {
           placeholder || isDoubles
             ? ''
             : `https://www.wtatennis.com/head-to-head/${team1.players[0].id}/${team2.players[0].id}`,
+        source: 'wta',
       };
 
       tennisMatches.push(tennisMatch);

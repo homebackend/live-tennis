@@ -55,6 +55,7 @@ export interface TennisMatch {
   displayScore: string;
   url: string;
   h2hUrl: string;
+  source: string;
 }
 
 export interface MenuUrl {

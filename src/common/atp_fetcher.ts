@@ -224,6 +224,7 @@ export class AtpFetcher extends FetcherCommon implements Fetcher {
           h2hUrl: isDoubles
             ? ''
             : `https://www.atptour.com/en/players/atp-head-2-head/${team1.players[0].slug}-vs-${team2.players[0].slug}/${team1.players[0].id}/${team2.players[0].id}`,
+          source: properties.tour === 'ATP' ? 'atp' : 'atp-challenger',
         };
         matches.push(match);
         matchMapping[m['MatchId']] = match;

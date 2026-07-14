@@ -10,6 +10,7 @@ import {
 import { ElectronRenderer } from './renderer';
 import { AppMenuRenderer } from '../common/app/menu_renderer';
 import { StyleKeys } from 'src/common/style_keys';
+import { QueryStatus } from 'src/common/fetcher';
 
 declare global {
   interface Window {
@@ -59,7 +60,7 @@ declare global {
       onRemoveEventMenuItem: (callback: (event: TennisEvent) => void) => void;
       onRemoveMatchMenuItem: (callback: (matchId: string) => void) => void;
       onUpdateFetchStatuses: (
-        callback: (statuses: Map<string, boolean>) => void
+        callback: (statuses: Map<string, QueryStatus>) => void
       ) => void;
     };
   }
@@ -250,7 +251,7 @@ async function renderMenu() {
     menuRenderer.removeMatchMenuItem(matchId)
   );
   window.electronAPIMenu.onUpdateFetchStatuses(
-    (statuses: Map<string, boolean>) =>
+    (statuses: Map<string, QueryStatus>) =>
       menuRenderer.updateFetchStatuses(statuses)
   );
 

@@ -1,3 +1,4 @@
+import { QueryStatus } from './fetcher.js';
 import {
   CheckedMenuItem,
   CheckedMenuItemProperties,
@@ -237,11 +238,11 @@ export abstract class MenuRendererCommon<
     }
   }
 
-  updateFetchStatuses(statuses: Map<string, boolean>): void {
+  updateFetchStatuses(statuses: Map<string, QueryStatus>): void {
     let statusText: string[] = [];
     statuses.forEach((status, key) => {
       let text = '';
-      if (status) {
+      if (status == QueryStatus.success || status == QueryStatus.skipped) {
         text = '🟢';
       } else {
         text = '🔴';

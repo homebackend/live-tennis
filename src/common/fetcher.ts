@@ -90,6 +90,12 @@ interface TourData {
   disabler: () => void;
 }
 
+export enum QueryStatus {
+  success = 1,
+  failure = 2,
+  skipped = 3,
+}
+
 export class LiveTennis {
   private _tourData: TourData[];
   private _log: (logs: string[]) => void;
@@ -167,10 +173,12 @@ export class LiveTennis {
       t.nextTime -= minimum;
     });
 
+    /*
     this._log(['Interval for next update', minimum.toString()]);
     this._tourData.forEach((t) =>
       this._log([t.settingKey, t.nextTime.toString()])
     );
+    */
 
     return minimum;
   }
@@ -220,7 +228,7 @@ export class LiveTennis {
 
   async *query(): AsyncGenerator<
     [QueryResponseType, TennisEvent, TennisMatch?],
-    [boolean, Map<string, boolean>],
+    [boolean, Map<string, QueryStatus>],
     void
   > {
     const pendingPromises = new Map<
@@ -243,7 +251,7 @@ export class LiveTennis {
     });
 
     let failed = false;
-    const statuses = new Map<string, boolean>();
+    const statuses = new Map<string, QueryStatus>();
 
     while (pendingPromises.size > 0) {
       const { id, data } = await Promise.race(
@@ -257,7 +265,7 @@ export class LiveTennis {
         // prevent old event/match cleanup elsewhere in the code.
         if (settingsKey) {
           if (oldEventsMap === newEventsMap) {
-            statuses.set(settingsKey, true);
+            statuses.set(settingsKey, QueryStatus.skipped);
             failed = true;
           } else {
             if (newEventsMap) {
@@ -297,9 +305,9 @@ export class LiveTennis {
                 }
               }
 
-              statuses.set(settingsKey, true);
+              statuses.set(settingsKey, QueryStatus.success);
             } else {
-              statuses.set(settingsKey, false);
+              statuses.set(settingsKey, QueryStatus.failure);
               failed = true;
             }
           }

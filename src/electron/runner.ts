@@ -11,6 +11,7 @@ import { Runner } from '../common/runner';
 import { Settings } from '../common/settings';
 import { TennisEvent, TennisMatch } from '../common/types';
 import { MenuRenderKeys } from './render_keys';
+import { QueryStatus } from 'src/common/fetcher';
 
 export class ElectronRunner extends Runner {
   private static DefaultWindowWidth = 650;
@@ -237,7 +238,7 @@ export class ElectronRunner extends Runner {
     );
   }
 
-  updateFetchStatuses(statuses: Map<string, boolean>): void {
+  updateFetchStatuses(statuses: Map<string, QueryStatus>): void {
     this._customMenu.webContents.send(
       MenuRenderKeys.updateFetchStatuses,
       statuses
