@@ -1,4 +1,4 @@
-import { QueryStatus } from './fetcher.js';
+import { QueryStatus } from './fetcher';
 import {
   CheckedMenuItem,
   CheckedMenuItemProperties,
