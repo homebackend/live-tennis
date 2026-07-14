@@ -25,7 +25,7 @@ export function createDownloadWindow() {
 
   win.loadFile(path.join(__dirname, 'autoupgrade', 'download', 'index.html'));
   win.once('ready-to-show', () => win?.show());
-  
+
   return win;
 }
 

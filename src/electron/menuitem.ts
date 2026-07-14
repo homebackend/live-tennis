@@ -1,150 +1,213 @@
-import { CheckedMenuItem, CheckedMenuItemProperties, LinkMenuItemProperties, MatchMenuItem, MatchMenuItemProperties, MatchMenuItemRenderer, MenuItem, PopubSubMenuItemProperties, PopupSubMenuItem } from "../common/menuitem";
-import { Renderer } from "../common/renderer";
-import { TennisMatch } from "../common/types";
-import { StyleKeys } from "../common/style_keys";
-import { getCheckedMenuItem, getLinkMenuItem, getPopupSubMenuItem, TextMenuClosed, TextMenuOpen } from "../common/app/menuitem";
+import {
+  CheckedMenuItem,
+  CheckedMenuItemProperties,
+  LinkMenuItemProperties,
+  MatchMenuItem,
+  MatchMenuItemProperties,
+  MatchMenuItemRenderer,
+  MenuItem,
+  PopubSubMenuItemProperties,
+  PopupSubMenuItem,
+} from '../common/menuitem';
+import { Renderer } from '../common/renderer';
+import { TennisMatch } from '../common/types';
+import { StyleKeys } from '../common/style_keys';
+import {
+  getCheckedMenuItem,
+  getLinkMenuItem,
+  getPopupSubMenuItem,
+  TextMenuClosed,
+  TextMenuOpen,
+} from '../common/app/menuitem';
 
-export class ElectronPopupSubMenuItem implements PopupSubMenuItem<HTMLDivElement, HTMLDivElement> {
-    private _menu: HTMLDivElement;
-    private _menuContainer: HTMLDivElement;
-    private _menuIndicator: HTMLSpanElement;
-    private _renderer: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>;
+export class ElectronPopupSubMenuItem implements PopupSubMenuItem<
+  HTMLDivElement,
+  HTMLDivElement
+> {
+  private _menu: HTMLDivElement;
+  private _menuContainer: HTMLDivElement;
+  private _menuIndicator: HTMLSpanElement;
+  private _renderer: Renderer<
+    HTMLDivElement,
+    HTMLSpanElement,
+    HTMLImageElement
+  >;
 
-    constructor(properties: PopubSubMenuItemProperties, renderer: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>) {
-        this._renderer = renderer;
+  constructor(
+    properties: PopubSubMenuItemProperties,
+    renderer: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>
+  ) {
+    this._renderer = renderer;
 
-        [this._menu, this._menuContainer, this._menuIndicator] = getPopupSubMenuItem(false, (handler) => {
-            const currentDisplay = this._menuContainer.style.display;
+    [this._menu, this._menuContainer, this._menuIndicator] =
+      getPopupSubMenuItem(
+        false,
+        (handler) => {
+          const currentDisplay = this._menuContainer.style.display;
 
-            handler();
+          handler();
 
-            if (currentDisplay === 'none') {
-                this.show();
-            } else {
-                this.hide();
-            }
-        }, properties, renderer);
+          if (currentDisplay === 'none') {
+            this.show();
+          } else {
+            this.hide();
+          }
+        },
+        properties,
+        renderer
+      );
+  }
+
+  get menu(): HTMLDivElement {
+    return this._menu;
+  }
+
+  addMenuItem(item: MenuItem<HTMLDivElement>): void {
+    this._renderer.addContainersToContainer(this._menuContainer, item.item);
+  }
+
+  show(): void {
+    this._menuContainer.style.display = 'block';
+    this._menuIndicator.textContent = TextMenuOpen;
+  }
+
+  hide(): void {
+    this._menuContainer.style.display = 'none';
+    this._menuIndicator.textContent = TextMenuClosed;
+  }
+
+  destroy(): void {
+    this._menu.innerHTML = '';
+    const parent = this._menu.parentElement;
+    if (parent) {
+      parent.removeChild(this._menu);
     }
-
-    get menu(): HTMLDivElement {
-        return this._menu;
-    }
-
-    addMenuItem(item: MenuItem<HTMLDivElement>): void {
-        this._renderer.addContainersToContainer(this._menuContainer, item.item);
-    }
-
-    show(): void {
-        this._menuContainer.style.display = 'block';
-        this._menuIndicator.textContent = TextMenuOpen;
-    }
-
-    hide(): void {
-        this._menuContainer.style.display = 'none';
-        this._menuIndicator.textContent = TextMenuClosed;
-    }
-
-    destroy(): void {
-        this._menu.innerHTML = '';
-        const parent = this._menu.parentElement;
-        if (parent) {
-            parent.removeChild(this._menu);
-        }
-        this._renderer.destroy();
-    }
+    this._renderer.destroy();
+  }
 }
 
 export class ElectronLinkMenuItem implements MenuItem<HTMLDivElement> {
-    protected _item: HTMLDivElement;
+  protected _item: HTMLDivElement;
 
-    constructor(properties: LinkMenuItemProperties, renderer: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>) {
-        this._item = getLinkMenuItem(properties, renderer);
-    }
+  constructor(
+    properties: LinkMenuItemProperties,
+    renderer: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>
+  ) {
+    this._item = getLinkMenuItem(properties, renderer);
+  }
 
-    get item(): HTMLDivElement {
-        return this._item;
-    }
+  get item(): HTMLDivElement {
+    return this._item;
+  }
 
-    get generatedItem(): HTMLDivElement {
-        return this._item;
-    }
+  get generatedItem(): HTMLDivElement {
+    return this._item;
+  }
 
-    destroy(): void {
-        this._item.innerHTML = '';
-    }
+  destroy(): void {
+    this._item.innerHTML = '';
+  }
 }
 
-abstract class ElectronCheckedMenuItemCommon extends MatchMenuItemRenderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement> implements CheckedMenuItem<HTMLDivElement> {
-    protected _checked: boolean;
-    protected _checkmark: HTMLSpanElement;
-    protected _item: HTMLDivElement;
-    protected _itemData: HTMLDivElement;
+abstract class ElectronCheckedMenuItemCommon
+  extends MatchMenuItemRenderer<
+    HTMLDivElement,
+    HTMLSpanElement,
+    HTMLImageElement
+  >
+  implements CheckedMenuItem<HTMLDivElement>
+{
+  protected _checked: boolean;
+  protected _checkmark: HTMLSpanElement;
+  protected _item: HTMLDivElement;
+  protected _itemData: HTMLDivElement;
 
-    constructor(r: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>, checked: boolean, clickHandler?: (checked: boolean) => void) {
-        super(r);
-        this._checked = checked;
-        [this._item, this._checkmark, this._itemData] = getCheckedMenuItem(r, checked, () => {
-            const parent = this._checkmark.parentElement;
-            if (parent) {
-                if (parent.style.visibility === 'hidden') {
-                    parent.style.visibility = 'visible';
-                } else {
-                    parent.style.visibility = 'hidden';
-                }
-                if (clickHandler) {
-                    clickHandler(parent.style.visibility === 'visible');
-                }
-            }
-        });
-    }
-
-    get checked(): boolean {
-        return this._checked;
-    }
-
-    set checked(checked: boolean) {
-        if (checked != this._checked) {
-            this._checkmark.click();
-        }
-    }
-
-    get item(): HTMLDivElement {
-        return this._item;
-    }
-
-    get generatedItem(): HTMLDivElement {
-        return this._item
-    }
-
-    destroy(): void {
-        this._item.innerHTML = '';
-        const parent = this._item.parentElement;
+  constructor(
+    r: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>,
+    checked: boolean,
+    clickHandler?: (checked: boolean) => void
+  ) {
+    super(r);
+    this._checked = checked;
+    [this._item, this._checkmark, this._itemData] = getCheckedMenuItem(
+      r,
+      checked,
+      () => {
+        const parent = this._checkmark.parentElement;
         if (parent) {
-            parent.removeChild(this._item);
+          if (parent.style.visibility === 'hidden') {
+            parent.style.visibility = 'visible';
+          } else {
+            parent.style.visibility = 'hidden';
+          }
+          if (clickHandler) {
+            clickHandler(parent.style.visibility === 'visible');
+          }
         }
+      }
+    );
+  }
+
+  get checked(): boolean {
+    return this._checked;
+  }
+
+  set checked(checked: boolean) {
+    if (checked != this._checked) {
+      this._checkmark.click();
     }
+  }
+
+  get item(): HTMLDivElement {
+    return this._item;
+  }
+
+  get generatedItem(): HTMLDivElement {
+    return this._item;
+  }
+
+  destroy(): void {
+    this._item.innerHTML = '';
+    const parent = this._item.parentElement;
+    if (parent) {
+      parent.removeChild(this._item);
+    }
+  }
 }
 
 export class ElectronCheckedMenuItem extends ElectronCheckedMenuItemCommon {
-    constructor(properties: CheckedMenuItemProperties, r: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>) {
-        super(r, properties.checked, properties.clickHandler);
-        this.r.addTextToContainer(this._itemData, { text: properties.text, xExpand: true, className: StyleKeys.NoWrapText });
-    }
-};
+  constructor(
+    properties: CheckedMenuItemProperties,
+    r: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>
+  ) {
+    super(r, properties.checked, properties.clickHandler);
+    this.r.addTextToContainer(this._itemData, {
+      text: properties.text,
+      xExpand: true,
+      className: StyleKeys.NoWrapText,
+    });
+  }
+}
 
-export class ElectronMatchMenuItem extends ElectronCheckedMenuItemCommon implements MatchMenuItem<HTMLDivElement> {
-    private _match: TennisMatch;
+export class ElectronMatchMenuItem
+  extends ElectronCheckedMenuItemCommon
+  implements MatchMenuItem<HTMLDivElement>
+{
+  private _match: TennisMatch;
 
-    constructor(properties: MatchMenuItemProperties, r: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>) {
-        super(r, properties.checked, properties.clickHandler);
+  constructor(
+    properties: MatchMenuItemProperties,
+    r: Renderer<HTMLDivElement, HTMLSpanElement, HTMLImageElement>
+  ) {
+    super(r, properties.checked, properties.clickHandler);
 
-        this._match = properties.match;
-        this.updateMatchData(this._itemData, this._match);
-    }
+    this._match = properties.match;
+    this.updateMatchData(this._itemData, this._match);
+  }
 
-    set match(match: TennisMatch) {
-        this._match = match;
-        this._itemData.innerHTML = '';
-        this.updateMatchData(this._itemData, this._match);
-    }
-};
+  set match(match: TennisMatch) {
+    this._match = match;
+    this._itemData.innerHTML = '';
+    this.updateMatchData(this._itemData, this._match);
+  }
+}
