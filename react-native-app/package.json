@@ -10,7 +10,7 @@
     "start": "npm run flags && react-native start",
     "clean": "cd android && ./gradlew clean",
     "log:android": "react-native log-android",
-    "package:android": "npm install && npm run flags && cd android && ./gradlew assembleDebug assembleRelease",
+    "package:android": "npm install && npm run flags && cd android && ./gradlew assembleRelease",
     "version:increment": "node incrementVersionCode.js",
     "test": "jest"
   },
