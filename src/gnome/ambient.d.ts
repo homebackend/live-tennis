@@ -16,11 +16,11 @@ declare module 'resource:///org/gnome/shell/ui/panelMenu.js' {
 
 // Add the declaration for popupMenu.js
 declare module 'resource:///org/gnome/shell/ui/popupMenu.js' {
-    import PopupMenu from '@girs/gnome-shell/ui/popupMenu';
-    export = PopupMenu;
+  import PopupMenu from '@girs/gnome-shell/ui/popupMenu';
+  export = PopupMenu;
 }
 
 declare module 'resource:///org/gnome/shell/ui/modalDialog.js' {
-    import ModalDialog from '@girs/gnome-shell/ui/modalDialog';
-    export = ModalDialog;
+  import ModalDialog from '@girs/gnome-shell/ui/modalDialog';
+  export = ModalDialog;
 }

@@ -1,255 +1,328 @@
 // src/fetcher.ts
 
-import { TennisEvent, TennisMatch, TennisSetScore } from "./types";
-import { AtpFetcher } from "./atp_fetcher";
-import { WtaFetcher } from "./wta_fetcher";
-import { Settings } from "./settings";
-import { TTFetcher } from "./tt_fetcher";
+import { TennisEvent, TennisMatch, TennisSetScore } from './types';
+import { AtpFetcher } from './atp_fetcher';
+import { WtaFetcher } from './wta_fetcher';
+import { Settings } from './settings';
+import { TTFetcher } from './tt_fetcher';
 
 type StringToTennisEventMap = {
-    [key: string]: TennisEvent
+  [key: string]: TennisEvent;
 };
 
 export enum QueryResponseType {
-    DeleteTournament,
-    AddTournament,
-    UpdateTournament,
-    DeleteMatch,
-    AddMatch,
-    UpdateMatch,
-};
-
-export interface FetcherProperties {
+  DeleteTournament,
+  AddTournament,
+  UpdateTournament,
+  DeleteMatch,
+  AddMatch,
+  UpdateMatch,
 }
 
+export interface FetcherProperties {}
+
 export interface Fetcher {
-    fetchData(properties: FetcherProperties): Promise<TennisEvent[] | undefined>;
-    disable(): void;
+  fetchData(properties: FetcherProperties): Promise<TennisEvent[] | undefined>;
+  disable(): void;
 }
 
 export abstract class FetcherCommon {
-    protected _isValidScore(score: number | string): boolean {
-        if (score === undefined || score === null || score === undefined || score === null) {
-            return false;
-        }
-
-        if (score === "") {
-            return false;
-        }
-
-        return true;
+  protected _isValidScore(score: number | string): boolean {
+    if (
+      score === undefined ||
+      score === null ||
+      score === undefined ||
+      score === null
+    ) {
+      return false;
     }
 
-    protected _formatSetScores(team1Scores: TennisSetScore[], team2Scores: TennisSetScore[]): string {
-        if (!team1Scores || !team2Scores || team1Scores.length === 0 || team2Scores.length === 0) {
-            return '';
-        }
-
-        const scores: string[] = [];
-        for (let i = 0; i < team1Scores.length && i < team2Scores.length; i++) {
-            const score1 = team1Scores[i].score;
-            const score2 = team2Scores[i].score;
-
-            if (!this._isValidScore(score1) || !this._isValidScore(score2)) {
-                continue;
-            }
-
-            let scoreString = `${score1}-${score2}`;
-
-            const tiebreak1 = team1Scores[i].tiebrake;
-            const tiebreak2 = team2Scores[i].tiebrake;
-            if (tiebreak1 || tiebreak2) {
-                const tiebreakScore = tiebreak1 || tiebreak2;
-                scoreString += `(${tiebreakScore})`;
-            }
-
-            scores.push(scoreString);
-        }
-        return scores.join(', ');
+    if (score === '') {
+      return false;
     }
+
+    return true;
+  }
+
+  protected _formatSetScores(
+    team1Scores: TennisSetScore[],
+    team2Scores: TennisSetScore[]
+  ): string {
+    if (
+      !team1Scores ||
+      !team2Scores ||
+      team1Scores.length === 0 ||
+      team2Scores.length === 0
+    ) {
+      return '';
+    }
+
+    const scores: string[] = [];
+    for (let i = 0; i < team1Scores.length && i < team2Scores.length; i++) {
+      const score1 = team1Scores[i].score;
+      const score2 = team2Scores[i].score;
+
+      if (!this._isValidScore(score1) || !this._isValidScore(score2)) {
+        continue;
+      }
+
+      let scoreString = `${score1}-${score2}`;
+
+      const tiebreak1 = team1Scores[i].tiebrake;
+      const tiebreak2 = team2Scores[i].tiebrake;
+      if (tiebreak1 || tiebreak2) {
+        const tiebreakScore = tiebreak1 || tiebreak2;
+        scoreString += `(${tiebreakScore})`;
+      }
+
+      scores.push(scoreString);
+    }
+    return scores.join(', ');
+  }
 }
 
 interface TourData {
-    settingKey: string,
-    nextTime: number,
-    fetcher: () => Promise<TennisEvent[] | undefined>,
-    lock: boolean,
-    eventMap: StringToTennisEventMap,
-    disabler: () => void;
+  settingKey: string;
+  nextTime: number;
+  fetcher: () => Promise<TennisEvent[] | undefined>;
+  lock: boolean;
+  eventMap: StringToTennisEventMap;
+  disabler: () => void;
+}
+
+export enum QueryStatus {
+  success = 1,
+  failure = 2,
+  skipped = 3,
 }
 
 export class LiveTennis {
-    private _tourData: TourData[];
-    private _log: (logs: string[]) => void;
-    private _settings: Settings;
+  private _tourData: TourData[];
+  private _log: (logs: string[]) => void;
+  private _settings: Settings;
 
-    constructor(log: (logs: string[]) => void, settings: Settings, atp_fetcher: AtpFetcher, wta_fetcher: WtaFetcher, tt_fetcher: TTFetcher) {
-        this._tourData = [{
-            settingKey: 'atp',
-            nextTime: 0,
-            fetcher: atp_fetcher.fetchData.bind(atp_fetcher, { tour: 'ATP' }),
-            lock: false,
-            eventMap: {},
-            disabler: atp_fetcher.disable.bind(atp_fetcher),
-        }, {
-            settingKey: 'atp-challenger',
-            nextTime: 0,
-            fetcher: atp_fetcher.fetchData.bind(atp_fetcher, { tour: 'ATP-Challenger' }),
-            lock: false,
-            eventMap: {},
-            disabler: atp_fetcher.disable.bind(atp_fetcher),
-        }, {
-            settingKey: 'wta',
-            nextTime: 0,
-            fetcher: wta_fetcher.fetchData.bind(wta_fetcher, {}),
-            lock: false,
-            eventMap: {},
-            disabler: wta_fetcher.disable.bind(wta_fetcher),
-        }, {
-            settingKey: 'tennis-temple',
-            nextTime: 0,
-            fetcher: tt_fetcher.fetchData.bind(tt_fetcher, {}),
-            lock: false,
-            eventMap: {},
-            disabler: tt_fetcher.disable.bind(tt_fetcher),
-        }];
+  constructor(
+    log: (logs: string[]) => void,
+    settings: Settings,
+    atp_fetcher: AtpFetcher,
+    wta_fetcher: WtaFetcher,
+    tt_fetcher: TTFetcher
+  ) {
+    this._tourData = [
+      {
+        settingKey: 'atp',
+        nextTime: 0,
+        fetcher: atp_fetcher.fetchData.bind(atp_fetcher, { tour: 'ATP' }),
+        lock: false,
+        eventMap: {},
+        disabler: atp_fetcher.disable.bind(atp_fetcher),
+      },
+      {
+        settingKey: 'atp-challenger',
+        nextTime: 0,
+        fetcher: atp_fetcher.fetchData.bind(atp_fetcher, {
+          tour: 'ATP-Challenger',
+        }),
+        lock: false,
+        eventMap: {},
+        disabler: atp_fetcher.disable.bind(atp_fetcher),
+      },
+      {
+        settingKey: 'wta',
+        nextTime: 0,
+        fetcher: wta_fetcher.fetchData.bind(wta_fetcher, {}),
+        lock: false,
+        eventMap: {},
+        disabler: wta_fetcher.disable.bind(wta_fetcher),
+      },
+      {
+        settingKey: 'tennis-temple',
+        nextTime: 0,
+        fetcher: tt_fetcher.fetchData.bind(tt_fetcher, {}),
+        lock: false,
+        eventMap: {},
+        disabler: tt_fetcher.disable.bind(tt_fetcher),
+      },
+    ];
 
-        this._log = log;
-        this._settings = settings;
-    }
+    this._log = log;
+    this._settings = settings;
+  }
 
-    public async updateNextRunTimesAndGetInterval(): Promise<number> {
-        const minimum = Math.min(...await Promise.all(this._tourData
-            .filter(async t => await this._settings!.getBoolean(`enable-${t.settingKey}`))
-            .map(async t => {
-                if (t.nextTime <= 0) {
-                    t.nextTime = await this._settings!.getInt(`${t.settingKey}-update-interval`);
-                }
-
-                return t.nextTime;
-            })
-        ));
-
-        this._tourData.forEach(t => {
-            t.nextTime -= minimum;
-        });
-
-        this._log(["Interval for next update", minimum.toString()]);
-        this._tourData.forEach(t => this._log([t.settingKey, t.nextTime.toString()]));
-
-        return minimum;
-    }
-
-    public resetNextRunTimes(): void {
-        this._tourData.forEach(t => {
-            t.nextTime = 0;
-        });
-    }
-
-    private async _process(tourData: TourData): Promise<[string, StringToTennisEventMap, StringToTennisEventMap | undefined]> {
-        const oldEventsMap = tourData.eventMap;
-        if (await this._settings.getBoolean(`enable-${tourData.settingKey}`)) {
-            if (tourData.nextTime > 0 || tourData.lock) {
-                return [tourData.settingKey, oldEventsMap, oldEventsMap];
+  public async updateNextRunTimesAndGetInterval(): Promise<number> {
+    const minimum = Math.min(
+      ...(await Promise.all(
+        this._tourData
+          .filter(
+            async (t) =>
+              await this._settings!.getBoolean(`enable-${t.settingKey}`)
+          )
+          .map(async (t) => {
+            if (t.nextTime <= 0) {
+              t.nextTime = await this._settings!.getInt(
+                `${t.settingKey}-update-interval`
+              );
             }
 
-            this._log([`Starting processing for ${tourData.settingKey}`]);
+            return t.nextTime;
+          })
+      ))
+    );
 
-            tourData.lock = true;
-            const newEvents = await tourData.fetcher();
-            tourData.lock = false;
-            if (!newEvents) {
-                this._log([`Fetch received no data`]);
-                return [tourData.settingKey, oldEventsMap, undefined];
-            }
+    this._tourData.forEach((t) => {
+      t.nextTime -= minimum;
+    });
 
-            const newEventsMap: StringToTennisEventMap = {};
-            tourData.eventMap = newEventsMap;
-            newEvents.forEach(e => newEventsMap[e.id] = e);
-            return [tourData.settingKey, oldEventsMap, newEventsMap];
-        } else {
-            return ['', oldEventsMap, undefined];
-        }
+    /*
+    this._log(['Interval for next update', minimum.toString()]);
+    this._tourData.forEach((t) =>
+      this._log([t.settingKey, t.nextTime.toString()])
+    );
+    */
+
+    return minimum;
+  }
+
+  public resetNextRunTimes(): void {
+    this._tourData.forEach((t) => {
+      t.nextTime = 0;
+    });
+  }
+
+  private async _process(
+    tourData: TourData
+  ): Promise<
+    [string, StringToTennisEventMap, StringToTennisEventMap | undefined]
+  > {
+    const oldEventsMap = tourData.eventMap;
+    if (await this._settings.getBoolean(`enable-${tourData.settingKey}`)) {
+      if (tourData.nextTime > 0 || tourData.lock) {
+        return [tourData.settingKey, oldEventsMap, oldEventsMap];
+      }
+
+      this._log([`Starting processing for ${tourData.settingKey}`]);
+
+      tourData.lock = true;
+      const newEvents = await tourData.fetcher();
+      tourData.lock = false;
+      if (!newEvents) {
+        this._log([`Fetch received no data`]);
+        return [tourData.settingKey, oldEventsMap, undefined];
+      }
+
+      const newEventsMap: StringToTennisEventMap = {};
+      tourData.eventMap = newEventsMap;
+      newEvents.forEach((e) => (newEventsMap[e.id] = e));
+      return [tourData.settingKey, oldEventsMap, newEventsMap];
+    } else {
+      return ['', oldEventsMap, undefined];
     }
+  }
 
-    private async _trackPromise<T>(promise: Promise<T>, id: number): Promise<{ id: number, data: T }> {
-        return promise.then(data => ({ id, data }));
-    }
+  private async _trackPromise<T>(
+    promise: Promise<T>,
+    id: number
+  ): Promise<{ id: number; data: T }> {
+    return promise.then((data) => ({ id, data }));
+  }
 
-    async *query(): AsyncGenerator<[QueryResponseType, TennisEvent, TennisMatch?], [boolean, Map<string, boolean>], void> {
-        const pendingPromises = new Map<number, Promise<{ id: number, data: [string, StringToTennisEventMap, StringToTennisEventMap | undefined] }>>();
-        this._tourData.forEach(tourData => {
-            const size = pendingPromises.size;
-            pendingPromises.set(size, this._trackPromise(this._process(tourData), size));
-        });
+  async *query(): AsyncGenerator<
+    [QueryResponseType, TennisEvent, TennisMatch?],
+    [boolean, Map<string, QueryStatus>],
+    void
+  > {
+    const pendingPromises = new Map<
+      number,
+      Promise<{
+        id: number;
+        data: [
+          string,
+          StringToTennisEventMap,
+          StringToTennisEventMap | undefined,
+        ];
+      }>
+    >();
+    this._tourData.forEach((tourData) => {
+      const size = pendingPromises.size;
+      pendingPromises.set(
+        size,
+        this._trackPromise(this._process(tourData), size)
+      );
+    });
 
-        let failed = false;
-        const statuses = new Map<string, boolean>();
+    let failed = false;
+    const statuses = new Map<string, QueryStatus>();
 
-        while (pendingPromises.size > 0) {
-            const { id, data } = await Promise.race(Array.from(pendingPromises.values()));
+    while (pendingPromises.size > 0) {
+      const { id, data } = await Promise.race(
+        Array.from(pendingPromises.values())
+      );
 
-            if (data) {
-                const [settingsKey, oldEventsMap, newEventsMap] = data;
-                // If both old and new objects are same: this means a query is already in progress
-                // so we do nothing and yield nothing, but mark request as failed since that will
-                // prevent old event/match cleanup elsewhere in the code.
-                if (settingsKey) {
-                    if (oldEventsMap === newEventsMap) {
-                        statuses.set(settingsKey, true);
-                        failed = true;
-                    } else {
-                        if (newEventsMap) {
-                            for (const [eventId, oldEvent] of Object.entries(oldEventsMap)) {
-                                if (!(eventId in newEventsMap)) {
-                                    yield [QueryResponseType.DeleteTournament, oldEvent];
-                                } else {
-                                    const newEvent = newEventsMap[eventId];
-                                    for (const [matchId, oldMatch] of Object.entries(oldEvent.matchMapping)) {
-                                        if (!(matchId in newEvent.matchMapping)) {
-                                            yield [QueryResponseType.DeleteMatch, oldEvent, oldMatch];
-                                        }
-                                    }
-                                }
-                            }
-
-                            for (const [eventId, newEvent] of Object.entries(newEventsMap)) {
-                                if (!(eventId in oldEventsMap)) {
-                                    yield [QueryResponseType.AddTournament, newEvent];
-                                    for (const match of newEvent.matches) {
-                                        yield [QueryResponseType.AddMatch, newEvent, match];
-                                    }
-                                } else {
-                                    yield [QueryResponseType.UpdateTournament, newEvent];
-                                    const oldEvent = oldEventsMap[eventId];
-                                    for (const [matchId, newMatch] of Object.entries(newEvent.matchMapping)) {
-                                        if (!(matchId in oldEvent.matchMapping)) {
-                                            yield [QueryResponseType.AddMatch, newEvent, newMatch];
-                                        } else {
-                                            yield [QueryResponseType.UpdateMatch, newEvent, newMatch];
-                                        }
-                                    }
-                                }
-                            }
-
-                            statuses.set(settingsKey, true);
-                        } else {
-                            statuses.set(settingsKey, false);
-                            failed = true;
-                        }
+      if (data) {
+        const [settingsKey, oldEventsMap, newEventsMap] = data;
+        // If both old and new objects are same: this means a query is already in progress
+        // so we do nothing and yield nothing, but mark request as failed since that will
+        // prevent old event/match cleanup elsewhere in the code.
+        if (settingsKey) {
+          if (oldEventsMap === newEventsMap) {
+            statuses.set(settingsKey, QueryStatus.skipped);
+            failed = true;
+          } else {
+            if (newEventsMap) {
+              for (const [eventId, oldEvent] of Object.entries(oldEventsMap)) {
+                if (!(eventId in newEventsMap)) {
+                  yield [QueryResponseType.DeleteTournament, oldEvent];
+                } else {
+                  const newEvent = newEventsMap[eventId];
+                  for (const [matchId, oldMatch] of Object.entries(
+                    oldEvent.matchMapping
+                  )) {
+                    if (!(matchId in newEvent.matchMapping)) {
+                      yield [QueryResponseType.DeleteMatch, oldEvent, oldMatch];
                     }
+                  }
                 }
+              }
+
+              for (const [eventId, newEvent] of Object.entries(newEventsMap)) {
+                if (!(eventId in oldEventsMap)) {
+                  yield [QueryResponseType.AddTournament, newEvent];
+                  for (const match of newEvent.matches) {
+                    yield [QueryResponseType.AddMatch, newEvent, match];
+                  }
+                } else {
+                  yield [QueryResponseType.UpdateTournament, newEvent];
+                  const oldEvent = oldEventsMap[eventId];
+                  for (const [matchId, newMatch] of Object.entries(
+                    newEvent.matchMapping
+                  )) {
+                    if (!(matchId in oldEvent.matchMapping)) {
+                      yield [QueryResponseType.AddMatch, newEvent, newMatch];
+                    } else {
+                      yield [QueryResponseType.UpdateMatch, newEvent, newMatch];
+                    }
+                  }
+                }
+              }
+
+              statuses.set(settingsKey, QueryStatus.success);
             } else {
-                failed = true;
+              statuses.set(settingsKey, QueryStatus.failure);
+              failed = true;
             }
-
-            pendingPromises.delete(id);
+          }
         }
+      } else {
+        failed = true;
+      }
 
-        return [failed, statuses];
+      pendingPromises.delete(id);
     }
 
-    disable() {
-        this._tourData.forEach(tourData => tourData.disabler());
-    }
-};
+    return [failed, statuses];
+  }
+
+  disable() {
+    this._tourData.forEach((tourData) => tourData.disabler());
+  }
+}

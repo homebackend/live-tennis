@@ -1,4 +1,4 @@
-import { UpdateEnvironment } from "src/common/update/update_environment";
+import { UpdateEnvironment } from 'src/common/update/update_environment';
 
 export class GnomeNoopEnv implements UpdateEnvironment {
   isUpdateCheckSupported() {
@@ -6,11 +6,11 @@ export class GnomeNoopEnv implements UpdateEnvironment {
   }
 
   async getCurrentInfo() {
-    return { version: "0.0.0", buildNumber: "0" };
+    return { version: '0.0.0', buildNumber: '0' };
   }
 
   getTargetAssetName() {
-    return "";
+    return '';
   }
 
   openDownloadUrl() {}

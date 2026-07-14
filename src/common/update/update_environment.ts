@@ -1,4 +1,4 @@
-import { LinuxFamily } from "./platform";
+import { LinuxFamily } from './platform';
 
 export interface CurrentAppInfo {
   version: string;
