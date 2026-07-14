@@ -21,6 +21,9 @@
   "scripts": {
     "sync": "node sync.js",
     "build": "node esbuild.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "start": "npm run start:electron",
     "start:electron": "npm run build && cross-env NODE_OPTIONS= NODE_ENV=development electron .",
     "start:metro": "cd react-native-app && npm run start",
@@ -72,6 +75,7 @@
     "prettier": "^3.9.4",
     "sslkeylog": "^0.2.2",
     "typescript": "^7.0.2",
+    "vitest": "^4.1.10",
     "xml-js": "^1.6.11"
   },
   "dependencies": {
