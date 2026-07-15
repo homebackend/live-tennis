@@ -5,7 +5,7 @@ const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '..');
 // Ensure no code other than src/{common,lib} is included.
 const commonCodeRoot = path.resolve(workspaceRoot, 'src', 'common');
-const libCodeRoot = path.resolve(workspaceRoot, 'src', 'lib');
+const libCodeRoot = path.resolve(workspaceRoot, 'src');
 const parentNodeModules = path.resolve(workspaceRoot, 'node_modules');
 
 const defaultConfig = getDefaultConfig(projectRoot);
