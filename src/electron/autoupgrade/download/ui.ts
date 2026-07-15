@@ -21,7 +21,7 @@ export function createDownloadWindow() {
     },
   });
 
-  win.webContents.openDevTools({ mode: 'detach' });
+  //win.webContents.openDevTools({ mode: 'detach' });
 
   win.loadFile(path.join(__dirname, 'autoupgrade', 'download', 'index.html'));
   win.once('ready-to-show', () => win?.show());
