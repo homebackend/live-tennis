@@ -8,7 +8,8 @@ import {
   TennisTeam,
 } from './types';
 import { generateUUIDv4 } from './util';
-import { Parser } from '../lib/htmlparser2/Parser';
+// @ts-ignore
+import { Parser } from 'htmlparser2-without-node-native';
 
 enum ParsePosition {
   Top,

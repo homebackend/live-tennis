@@ -112,7 +112,7 @@ export const GMatchMenuItem = GObject.registerClass(
     ) {
       const children = this.actor.get_children();
       if (children.length < 2) {
-        console.log('No children');
+        this._log!(['No children']);
         return;
       }
       const container = children[1];
