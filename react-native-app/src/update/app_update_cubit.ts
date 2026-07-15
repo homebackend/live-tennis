@@ -19,7 +19,7 @@ export class RNAppUpdateCubit extends AppUpdateCubit {
   }
 
   async tryOtaUpdate(downloadUrl: string) {
-    const apkPath = `${RNFetchBlob.fs.dirs.CacheDir}/${this.upgradeFileName}`;
+    const apkPath = `${RNFetchBlob.fs.dirs.CacheDir}/${this.upgradeFileName}.apk`;
 
     try {
       try {
