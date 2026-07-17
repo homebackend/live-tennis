@@ -1,6 +1,6 @@
 {
   "name": "livetennis",
-  "version": "5.2.5",
+  "version": "5.2.6",
   "private": true,
   "scripts": {
     "flags": "node src/flags_generator.mjs",
