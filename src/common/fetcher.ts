@@ -87,6 +87,7 @@ interface TourData {
   fetcher: () => Promise<TennisEvent[] | undefined>;
   lock: boolean;
   eventMap: StringToTennisEventMap;
+  lastStatus: QueryStatus;
   disabler: () => void;
 }
 
@@ -98,6 +99,7 @@ export enum QueryStatus {
 
 export class LiveTennis {
   private _tourData: TourData[];
+  private _tourDataMap: { [key: string]: TourData } = {};
   private _log: (logs: string[]) => void;
   private _settings: Settings;
 
@@ -115,6 +117,7 @@ export class LiveTennis {
         fetcher: atp_fetcher.fetchData.bind(atp_fetcher, { tour: 'ATP' }),
         lock: false,
         eventMap: {},
+        lastStatus: QueryStatus.skipped,
         disabler: atp_fetcher.disable.bind(atp_fetcher),
       },
       {
@@ -125,6 +128,7 @@ export class LiveTennis {
         }),
         lock: false,
         eventMap: {},
+        lastStatus: QueryStatus.skipped,
         disabler: atp_fetcher.disable.bind(atp_fetcher),
       },
       {
@@ -133,6 +137,7 @@ export class LiveTennis {
         fetcher: wta_fetcher.fetchData.bind(wta_fetcher, {}),
         lock: false,
         eventMap: {},
+        lastStatus: QueryStatus.skipped,
         disabler: wta_fetcher.disable.bind(wta_fetcher),
       },
       {
@@ -141,9 +146,12 @@ export class LiveTennis {
         fetcher: tt_fetcher.fetchData.bind(tt_fetcher, {}),
         lock: false,
         eventMap: {},
+        lastStatus: QueryStatus.skipped,
         disabler: tt_fetcher.disable.bind(tt_fetcher),
       },
     ];
+
+    this._tourData.forEach((t) => (this._tourDataMap[t.settingKey] = t));
 
     this._log = log;
     this._settings = settings;
@@ -265,7 +273,10 @@ export class LiveTennis {
         // prevent old event/match cleanup elsewhere in the code.
         if (settingsKey) {
           if (oldEventsMap === newEventsMap) {
-            statuses.set(settingsKey, QueryStatus.skipped);
+            statuses.set(
+              settingsKey,
+              this._tourDataMap[settingsKey]?.lastStatus ?? QueryStatus.skipped
+            );
             failed = true;
           } else {
             if (newEventsMap) {
@@ -305,8 +316,10 @@ export class LiveTennis {
                 }
               }
 
+              this._tourDataMap[settingsKey].lastStatus = QueryStatus.success;
               statuses.set(settingsKey, QueryStatus.success);
             } else {
+              this._tourDataMap[settingsKey].lastStatus = QueryStatus.failure;
               statuses.set(settingsKey, QueryStatus.failure);
               failed = true;
             }
