@@ -9,7 +9,8 @@ import {
 } from './types';
 import { generateUUIDv4 } from './util';
 // @ts-ignore
-import { Parser } from 'htmlparser2-without-node-native';
+import HtmlParserPkg from 'htmlparser2-without-node-native';
+const { Parser } = HtmlParserPkg;
 
 enum ParsePosition {
   Top,
