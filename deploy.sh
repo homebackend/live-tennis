@@ -16,6 +16,7 @@ cp dist-gnome/{extension,prefs}.js "$DEST_DIR"
 cp src/gnome/metadata.json "$DEST_DIR/metadata.json"
 cp src/common/style.css "$DEST_DIR/stylesheet.css"
 cp -r dist-gnome/schemas "$DEST_DIR"
+cp -r dist-gnome/htmlparser2 "$DEST_DIR"
 cp -r assets/icons "$DEST_DIR"
 cp -r assets/flags "$DEST_DIR"
 

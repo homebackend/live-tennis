@@ -105,6 +105,29 @@ async function lintFiles(files) {
   await ESLint.outputFixes(results);
 }
 
+async function buildHtmlParserLib() {
+  const libSrc = path.join(
+    process.cwd(),
+    'node_modules/htmlparser2-without-node-native/lib/index.js'
+  );
+  const outDir = path.join(process.cwd(), 'dist-gnome/htmlparser2');
+
+  await fs.mkdir(outDir, { recursive: true });
+
+  await build({
+    entryPoints: [libSrc],
+    outfile: path.join(outDir, 'index.js'),
+    format: 'esm',
+    platform: 'neutral',
+    target: ['es2022'],
+    bundle: true,
+    external: [],
+    mainFields: ['main'],
+  });
+
+  console.log('✅ htmlparser2 library converted to ESM');
+}
+
 async function buildGnome() {
   const distDir = path.join(process.cwd(), 'dist-gnome');
 
@@ -119,7 +142,29 @@ async function buildGnome() {
     outdir: distDir,
     platform: 'node',
     target: ['es2022'],
-    external: ['@girs/*', 'gi', 'gi://*', 'resource://*'],
+    external: [
+      '@girs/*',
+      'gi',
+      'gi://*',
+      'resource://*',
+      'htmlparser2-without-node-native',
+    ],
+    plugins: [
+      {
+        name: 'alias-external',
+        setup(build) {
+          build.onResolve(
+            { filter: /^htmlparser2-without-node-native$/ },
+            () => {
+              return {
+                path: './htmlparser2/index.js',
+                external: true,
+              };
+            }
+          );
+        },
+      },
+    ],
   });
 
   const genFiles = Object.values(entryPoints).map(
@@ -160,6 +205,7 @@ async function main() {
   try {
     await buildElectron();
     await buildGnome();
+    await buildHtmlParserLib();
   } catch (err) {
     console.error('Build failed:', err);
     process.exit(1);
