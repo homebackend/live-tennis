@@ -82,8 +82,8 @@ android {
         applicationId 'com.homebackend.livetennis'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 12
-        versionName '5.2.7'
+        versionCode 13
+        versionName '5.2.8'
     }
     signingConfigs {
         debug {
