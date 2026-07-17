@@ -22,7 +22,7 @@ class ApkInstallerModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun installApk(filePath: String, promise: Promise) {
-        val activity = reactContext.getCurrentActivity() // <-- fix here
+        val activity = reactContext.getCurrentActivity()
         if (activity == null) {
             promise.reject("NO_ACTIVITY", "No current Activity")
             return
