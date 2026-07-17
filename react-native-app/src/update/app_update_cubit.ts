@@ -20,11 +20,13 @@ export class RNAppUpdateCubit extends AppUpdateCubit {
 
   async tryOtaUpdate(downloadUrl: string) {
     const fileName = `${this.upgradeFileName}.apk`;
-    const cacheDir = ApkInstaller.getExternalCacheDir();
+    const cacheDir = await ApkInstaller.getExternalCacheDir();
 
     const apkPath = `${cacheDir}/${fileName}`;
 
-    await RNFetchBlob.fs.mkdir(cacheDir);
+    if (!(await RNFetchBlob.fs.exists(cacheDir))) {
+      await RNFetchBlob.fs.mkdir(cacheDir);
+    }
 
     try {
       try {
@@ -93,7 +95,7 @@ export class RNAppUpdateCubit extends AppUpdateCubit {
         ),
       );
 
-      await ApkInstaller.install(apkPath);
+      await ApkInstaller.installApk(apkPath);
 
       this.emitState(
         new AppUpdateStatus(
