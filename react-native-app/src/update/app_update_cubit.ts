@@ -100,7 +100,7 @@ export class RNAppUpdateCubit extends AppUpdateCubit {
       this.emitState(
         new AppUpdateStatus(
           AppUpdateState.inProgress,
-          new OtaEvent(OtaStatus.INSTALLATION_DONE, ''),
+          new OtaEvent(OtaStatus.INSTALLING, 'Waiting for user action...'),
         ),
       );
     } catch (e: any) {
@@ -130,12 +130,6 @@ export class RNAppUpdateCubit extends AppUpdateCubit {
           ),
         );
       }
-      return;
-    } finally {
-      try {
-        if (await RNFetchBlob.fs.exists(apkPath))
-          await RNFetchBlob.fs.unlink(apkPath);
-      } catch {}
     }
   }
 }
