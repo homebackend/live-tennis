@@ -390,8 +390,8 @@ export default class LiveScorePreferences extends ExtensionPreferences {
     if (!settings.get_boolean('force-update-check')) {
       this._fillPreferencesWindow(dialog);
     } else {
-      this._updateExtension(dialog);
       settings.set_boolean('force-update-check', false);
+      this._updateExtension(dialog);
     }
   }
 

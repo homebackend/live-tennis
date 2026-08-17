@@ -325,37 +325,41 @@ export default class LiveScoreExtension
   }
 
   private _showNotification(s: AppInitializationStatus) {
-    this._source = new MessageTray.Source({ title: 'My Extension' });
+    this._source = new MessageTray.Source({
+      title: 'Live Tennis Gnome Extension',
+    });
     Main.messageTray.add(this._source);
 
     this._notification = new MessageTray.Notification({
       source: this._source,
       title: `Update ${s.latestVersion} available`,
-      body: 'Changelog in preferences',
+      body: 'Click here to see changes and update',
       isTransient: false,
     });
 
-    this._notification.addAction('View Update', () => {
-      this._settings!.setBoolean('force-update-check', true);
+    this._notification.addAction('View Update', async () => {
+      await this._settings!.setBoolean('force-update-check', true);
       this.openPreferences();
-      this._source?.destroy(
+      /*this._source?.destroy(
         MessageTray.NotificationDestroyedReason.SOURCE_CLOSED
-      );
+      );*/
     });
 
-    this._notification.addAction('Dismiss', () => {
-      this._settings!.setBoolean('force-update-check', false);
-      this._settings!.setStrv('skipped-update-versions', [
+    this._notification.addAction('Dismiss', async () => {
+      await this._settings!.setBoolean('force-update-check', false);
+      await this._settings!.setStrv('skipped-update-versions', [
         s.latestVersion ?? '',
       ]);
-      this._source?.destroy(MessageTray.NotificationDestroyedReason.DISMISSED);
+      //this._source?.destroy(MessageTray.NotificationDestroyedReason.DISMISSED);
     });
 
-    this._notificationDestroyId = this._notification.connect('destroy', () => {
-      this._settings!.setBoolean('force-update-check', false);
-      this._notification = null;
-      this._notificationDestroyId = 0;
-    });
+    this._notificationDestroyId = this._notification.connect(
+      'destroy',
+      async () => {
+        this._notification = null;
+        this._notificationDestroyId = 0;
+      }
+    );
 
     this._source.addNotification(this._notification);
   }
