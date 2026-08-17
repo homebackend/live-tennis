@@ -23,6 +23,8 @@ export interface Schema {
   live_window_size_x: number;
   live_window_size_y: number;
   enable_debug_logging: boolean;
+  force_update_check: boolean;
+  skipped_update_versions: string[];
 }
 
 export enum SettingApplicability {
@@ -311,6 +313,23 @@ export const schema: FullSchema = {
     default: false,
     summary: 'Enable Debug Logging',
     description: 'Enables debug logging. Only helpful if you are developing.',
+  },
+  force_update_check: {
+    type: 'boolean',
+    default: false,
+    applicability: [SettingApplicability.GnomeShellExtension],
+    summary: 'Open update window',
+    description: 'Whether to open update window on next open preferences.',
+  },
+  skipped_update_versions: {
+    type: 'array',
+    items: {
+      type: 'string',
+    },
+    default: [],
+    applicability: [SettingApplicability.GnomeShellExtension],
+    summary: 'Updates to be skipped',
+    description: 'Updates to be skipped.',
   },
 };
 

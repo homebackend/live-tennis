@@ -13,7 +13,7 @@ import { CountryPreferencesScreen } from './src/prefs_countries';
 import { useColorScheme } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { SplashScreen } from './src/splash/splash';
-import { AppInitializationCubit } from '@common/update/app_initialization_cubit';
+import { AppInitializationCubit } from '@homebackend/ts-common';
 import {
   organization,
   repo,
@@ -21,10 +21,7 @@ import {
 } from '@common/update/constants';
 import { RNUpdateEnv } from './src/update/rn_env';
 import { RNAppUpdateCubit } from './src/update/app_update_cubit';
-import {
-  AppInitializationState,
-  AppInitializationStatus,
-} from '@common/update/types';
+import { AppInitializationState, AppInitializationStatus } from '@homebackend/ts-common';
 import { AppUpdateDialog } from './src/update/components/app_update_dialog';
 import { UpdateScreen } from './src/update/components/update_screen';
 import { ErrorDialog } from './src/update/components/error_dialog';

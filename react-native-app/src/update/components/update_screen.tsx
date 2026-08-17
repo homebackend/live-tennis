@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import { AppUpdateState, AppUpdateStatus } from '@common/update/types';
+import { AppUpdateState, AppUpdateStatus } from '@homebackend/ts-common';
 
 export const UpdateScreen = ({ updateCubit, onBack, onError }: any) => {
   const [status, setStatus] = useState(updateCubit.state);

@@ -1,10 +1,10 @@
-import { AppUpdateCubit } from 'src/common/update/app_update_cubit';
+import { AppUpdateCubit } from '@homebackend/ts-common';
 import {
   AppUpdateState,
   AppUpdateStatus,
   OtaEvent,
   OtaStatus,
-} from 'src/common/update/types';
+} from '@homebackend/ts-common';
 import * as fs from 'fs';
 import * as os from 'os';
 import path from 'path';

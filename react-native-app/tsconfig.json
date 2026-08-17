@@ -1,7 +1,6 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "baseUrl": ".",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "paths": {

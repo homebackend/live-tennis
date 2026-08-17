@@ -2,7 +2,7 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
-import Gtk from 'gi://Gtk';
+import Gtk, { AccessibleAnnouncementPriority } from 'gi://Gtk';
 import GdkPixbuf from 'gi://GdkPixbuf';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -14,7 +14,22 @@ import {
   Schema,
   schema,
   SettingApplicability,
-} from 'src/common/schema';
+} from '../common/schema';
+import { GnomeUpdateEnvironment } from './autoupgrade/gnome_env';
+import {
+  AppInitializationCubit,
+  AppInitializationState,
+  AppInitializationStatus,
+} from '@homebackend/ts-common';
+import { GnomeExtensionUpdateCubit } from './autoupgrade/app_update_cubit';
+import { baseAssetName, organization, repo } from '../common/update/constants';
+import {
+  createAskUserPage,
+  createErrorPage,
+  createLoadPage,
+  createPostInstallPage,
+  createUpdatePage,
+} from './autoupgrade/ui';
 
 const CountryItem = GObject.registerClass(
   {
@@ -69,8 +84,8 @@ export default class LiveScorePreferences extends ExtensionPreferences {
     });
 
     const checkButton = new Gtk.CheckButton({
-      halign: Gtk.Align.CENTER, // Prevent horizontal expansion
-      valign: Gtk.Align.CENTER, // Prevent vertical expansion
+      halign: Gtk.Align.CENTER,
+      valign: Gtk.Align.CENTER,
     });
     row.add_suffix(checkButton);
 
@@ -105,7 +120,7 @@ export default class LiveScorePreferences extends ExtensionPreferences {
       title: schemaItem.summary,
       text: schemaItem.description,
     });
-    entryRow.set_tooltip_text(schemaItem.description);
+    entryRow.set_tooltip_text(schemaItem.description ?? '');
 
     const errorIcon = new Gtk.Image({
       icon_name: 'dialog-error-symbolic',
@@ -174,8 +189,7 @@ export default class LiveScorePreferences extends ExtensionPreferences {
     const selectedCodes = new Set(settings.get_strv(this._getKey(key)));
     const model = new Gio.ListStore({ item_type: CountryItem.$gtype });
 
-    // Populate the model
-    Countries.forEach((country) => {
+    Countries.forEach((country: { name: string; ioc: string }) => {
       try {
         const flagPath = this.path + `/flags/${country.ioc.toLowerCase()}.svg`;
         const pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
@@ -188,7 +202,7 @@ export default class LiveScorePreferences extends ExtensionPreferences {
         model.append(
           new CountryItem({ ...country, flag: pixbuf, selected: isSelected })
         );
-      } catch (e) {
+      } catch (e: any) {
         console.error(`Failed to load flag for ${country.name}: ${e.message}`);
         const isSelected = selectedCodes.has(country.ioc);
         model.append(
@@ -197,9 +211,8 @@ export default class LiveScorePreferences extends ExtensionPreferences {
       }
     });
 
-    // Setup the list item factory
     const factory = new Gtk.SignalListItemFactory();
-    factory.connect('setup', (f, listItem) => {
+    factory.connect('setup', (f, listItem: Gtk.ListItem) => {
       const check = new Gtk.CheckButton({
         halign: Gtk.Align.END,
       });
@@ -215,19 +228,21 @@ export default class LiveScorePreferences extends ExtensionPreferences {
       box.append(label);
       listItem.set_child(box);
     });
-    factory.connect('bind', (f, listItem) => {
-      const countryItem = listItem.get_item();
-      const box = listItem.get_child();
-      const check = box.get_first_child();
-      const flagImage = check.get_next_sibling();
-      const label = flagImage.get_next_sibling();
+    factory.connect('bind', (f, listItem: Gtk.ListItem) => {
+      const countryItem = listItem.get_item() as InstanceType<
+        typeof CountryItem
+      >;
+      const box = listItem.get_child() as Gtk.Box;
+      const check = box.get_first_child() as Gtk.CheckButton;
+      const flagImage = check.get_next_sibling() as Gtk.Image;
+      const label = flagImage.get_next_sibling() as Gtk.Label;
 
       check.set_active(countryItem.selected);
       check.connect('toggled', () => {
         countryItem.selected = check.get_active();
         const selectedCodes = [];
         for (let i = 0; i < model.get_n_items(); i++) {
-          const item = model.get_item(i);
+          const item = model.get_item(i) as InstanceType<typeof CountryItem>;
           if (item.selected) {
             selectedCodes.push(item.ioc);
           }
@@ -242,11 +257,10 @@ export default class LiveScorePreferences extends ExtensionPreferences {
     });
 
     const listView = new Gtk.ListView({
-      model: Gtk.NoSelection.new(model), // Use NoSelection since we handle it manually
+      model: Gtk.NoSelection.new(model),
       factory: factory,
     });
 
-    // Add the list to a scrollable window
     const scrollView = new Gtk.ScrolledWindow({
       height_request: 300,
       hexpand: true,
@@ -275,7 +289,7 @@ export default class LiveScorePreferences extends ExtensionPreferences {
       title: schemaItem.summary,
       text: currentValues,
     });
-    entryRow.set_tooltip_text(schemaItem.description);
+    entryRow.set_tooltip_text(schemaItem.description ?? '');
 
     const errorIcon = new Gtk.Image({
       icon_name: 'dialog-error-symbolic',
@@ -357,10 +371,10 @@ export default class LiveScorePreferences extends ExtensionPreferences {
     return group;
   }
 
-  fillPreferencesWindow(window: Adw.PreferencesWindow) {
+  _fillPreferencesWindow(dialog: Adw.PreferencesDialog) {
     const settings: Gio.Settings = this.getSettings();
     const page = new Adw.PreferencesPage();
-    window.add(page);
+    dialog.add(page);
 
     prefs
       .map((p) => this.getGroup(p, settings))
@@ -368,5 +382,100 @@ export default class LiveScorePreferences extends ExtensionPreferences {
         accumulator.add(current);
         return accumulator;
       }, page);
+  }
+
+  fillPreferencesWindow(dialog: Adw.PreferencesDialog) {
+    const settings: Gio.Settings = this.getSettings();
+
+    if (!settings.get_boolean('force-update-check')) {
+      this._fillPreferencesWindow(dialog);
+    } else {
+      this._updateExtension(dialog);
+      settings.set_boolean('force-update-check', false);
+    }
+  }
+
+  _updateExtension(dialog: Adw.PreferencesDialog) {
+    const env = new GnomeUpdateEnvironment(this.metadata);
+    const initCubit = new AppInitializationCubit(
+      organization,
+      repo,
+      baseAssetName,
+      env,
+      (m) => console.log(...m)
+    );
+
+    const loadPage = createLoadPage();
+    dialog.add(loadPage);
+
+    initCubit.on('state', (s: AppInitializationStatus) => {
+      if (s.state === AppInitializationState.showUpdateDetails) {
+        console.log(`Download url: ${s.downloadUrl}`);
+        const askUserPage = createAskUserPage(
+          s,
+          () => {
+            const updateCubit = new GnomeExtensionUpdateCubit(
+              `${baseAssetName}.shell-extension.zip`,
+              env,
+              console.log,
+              this.uuid
+            );
+
+            const updatePage = createUpdatePage(
+              updateCubit,
+              () => {
+                const postInstallPage = createPostInstallPage(() => {
+                  dialog.remove(postInstallPage);
+                  this._fillPreferencesWindow(dialog);
+                });
+                dialog.remove(updatePage);
+                dialog.add(postInstallPage);
+              },
+              (e) => {
+                const errorPage = createErrorPage(e, undefined, () => {
+                  dialog.remove(updatePage);
+                  this._fillPreferencesWindow(dialog);
+                });
+                dialog.remove(updatePage);
+                dialog.add(errorPage);
+              }
+            );
+
+            dialog.remove(askUserPage);
+            dialog.add(updatePage);
+            updateCubit.tryUpdate(s.downloadUrl!);
+          },
+          () => {
+            dialog.remove(askUserPage);
+            this._fillPreferencesWindow(dialog);
+          }
+        );
+        dialog.remove(loadPage);
+        dialog.add(askUserPage);
+      } else if (s.state === AppInitializationState.updateCheckFailed) {
+        const errorPage = createErrorPage(
+          s.error,
+          () => {
+            dialog.remove(errorPage);
+            dialog.add(loadPage);
+            initCubit.checkUpdateRequired();
+          },
+          () => {
+            dialog.remove(errorPage);
+            this._fillPreferencesWindow(dialog);
+          }
+        );
+        dialog.remove(loadPage);
+        dialog.add(errorPage);
+      } else if (s.state === AppInitializationState.initialized) {
+        dialog.remove(loadPage);
+        this._fillPreferencesWindow(dialog);
+      } else {
+        dialog.remove(loadPage);
+        this._fillPreferencesWindow(dialog);
+      }
+    });
+
+    initCubit.checkUpdateRequired();
   }
 }
