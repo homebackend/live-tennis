@@ -5,7 +5,7 @@ import {
   AppUpdateState,
   AppUpdateStatus,
   OtaStatus,
-} from 'src/common/update/types';
+} from '@homebackend/ts-common';
 
 export function createDownloadWindow() {
   var win = new BrowserWindow({

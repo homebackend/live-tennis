@@ -2,14 +2,18 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { UpdateRendererKeys } from './render_keys';
 import path from 'path';
 import { ElectronUpdateEnv } from '../electron_env';
-import { AppInitializationCubit } from 'src/common/update/app_initialization_cubit';
-import { ElectronAppUpdateCubit } from '../app_update_cubit';
 import {
+  AppInitializationCubit,
   AppInitializationState,
   AppInitializationStatus,
-} from 'src/common/update/types';
+} from '@homebackend/ts-common';
+import { ElectronAppUpdateCubit } from '../app_update_cubit';
 import { startUpdateWithUI } from '../download/ui';
-import { organization, repo, baseAssetName } from 'src/common/update/constants';
+import {
+  organization,
+  repo,
+  baseAssetName,
+} from '../../../common/update/constants';
 
 type UpdateData = {
   currentVersion: string;

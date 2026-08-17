@@ -7,11 +7,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import {
-  AppInitializationState,
-  AppUpdateState,
-  OtaStatus,
-} from '@common/update/types';
+import { AppInitializationState, AppUpdateState, OtaStatus } from '@homebackend/ts-common';
 
 type Props = {
   currentVersion: string;
@@ -70,8 +66,8 @@ export const UpdateWindow: React.FC<Props> = ({
               {isDownloading
                 ? `Downloading ${otaEvent?.value}`
                 : isInstalling
-                ? 'Installing...'
-                : otaEvent?.value}
+                  ? 'Installing...'
+                  : otaEvent?.value}
             </Text>
           </View>
         )}

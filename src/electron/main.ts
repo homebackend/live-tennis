@@ -10,7 +10,7 @@ import { CurlApiHandler } from './api';
 import { PrefsManager } from './prefs_manager';
 import { Settings } from '../common/settings';
 import { NodeTTFetcher } from '../common/tt_fetcher';
-import { AxiosApiHandler } from 'src/common/app/api';
+import { AxiosApiHandler } from '../common/app/api';
 import { checkForUpdateAndStart } from './autoupgrade/update/ui';
 import { createSplash } from './splash/ui';
 

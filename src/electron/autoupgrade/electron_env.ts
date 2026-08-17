@@ -2,9 +2,9 @@ import fs from 'fs';
 import { app, shell } from 'electron';
 import {
   CurrentAppInfo,
+  LinuxFamily,
   UpdateEnvironment,
-} from '../../common/update/update_environment';
-import { LinuxFamily } from 'src/common/update/platform';
+} from '@homebackend/ts-common';
 import { execFile } from 'node:child_process';
 
 export class ElectronUpdateEnv implements UpdateEnvironment {

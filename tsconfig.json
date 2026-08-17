@@ -2,37 +2,19 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
-    "types": [
-      "gnome-shell",
-    ],
-    "baseUrl": ".",
+    "allowJs": true,
+    "lib": ["ES2022", "dom"],
+    "rootDir": "./src",
     "paths": {
-      "gi://*": [
-        "./node_modules/@girs/*/"
-      ]
+      "gi://*": ["./node_modules/@girs/*/"]
     },
-    "typeRoots": [
-      "./node_modules/@girs",
-      "./node_modules/@gjsify",
-      "./node_modules/@girs/gio-2.0",
-      "./node_modules/@girs/soup-3.0",
-      "./node_modules/@girs/gdkpixbuf-2.0"
-    ],
     "outDir": "./dist"
   },
-  "include": [
-    "src/**/*",
-    "src/gnome/ambient.d.ts", // Add this line to include the declaration file
-    "src/gnome/gi.d.ts"
-  ]
+  "include": ["src/**/*"]
 }

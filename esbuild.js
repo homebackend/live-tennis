@@ -5,6 +5,7 @@ import { type } from 'os';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { execSync } from 'child_process'; // Import execSync
+import pkg from './package.json' with { type: 'json' };
 
 const outDir = path.join(process.cwd(), 'dist');
 
@@ -35,7 +36,7 @@ async function buildElectron() {
     format: 'cjs',
     entryPoints: ['src/electron/main.ts'],
     outfile: 'dist/main.cjs',
-    external: ['electron'],
+    external: ['electron', 'gi://*'],
   });
 
   await build({
@@ -142,6 +143,9 @@ async function buildGnome() {
     outdir: distDir,
     platform: 'node',
     target: ['es2022'],
+    define: {
+      __VERSION__: JSON.stringify(pkg.version),
+    },
     external: [
       '@girs/*',
       'gi',

@@ -1,9 +1,6 @@
 import DeviceInfo from 'react-native-device-info';
 import { Linking } from 'react-native';
-import {
-  UpdateEnvironment,
-  CurrentAppInfo,
-} from '@common/update/update_environment';
+import { UpdateEnvironment, CurrentAppInfo } from '@homebackend/ts-common';
 
 export class RNUpdateEnv implements UpdateEnvironment {
   isUpdateCheckSupported() {

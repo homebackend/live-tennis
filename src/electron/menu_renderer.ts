@@ -9,8 +9,8 @@ import {
 } from './menuitem';
 import { ElectronRenderer } from './renderer';
 import { AppMenuRenderer } from '../common/app/menu_renderer';
-import { StyleKeys } from 'src/common/style_keys';
-import { QueryStatus } from 'src/common/fetcher';
+import { StyleKeys } from '../common/style_keys';
+import { QueryStatus } from '../common/fetcher';
 
 declare global {
   interface Window {
