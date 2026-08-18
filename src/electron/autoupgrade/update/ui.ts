@@ -87,7 +87,8 @@ export async function checkForUpdateAndStart(
     repo,
     baseAssetName,
     env,
-    log
+    log,
+    fetch
   );
   const updateCubit = new ElectronAppUpdateCubit(baseAssetName, env, log);
 

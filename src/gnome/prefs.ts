@@ -30,6 +30,7 @@ import {
   createPostInstallPage,
   createUpdatePage,
 } from './autoupgrade/ui';
+import { gnomeFetch } from '@homebackend/ts-common/gnome';
 
 const CountryItem = GObject.registerClass(
   {
@@ -402,7 +403,8 @@ export default class LiveScorePreferences extends ExtensionPreferences {
       repo,
       baseAssetName,
       env,
-      (m) => console.log(...m)
+      (m) => console.log(...m),
+      gnomeFetch
     );
 
     const loadPage = createLoadPage();
