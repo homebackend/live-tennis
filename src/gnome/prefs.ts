@@ -2,7 +2,7 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
-import Gtk from 'gi://Gtk';
+import Gtk, { AccessibleAnnouncementPriority } from 'gi://Gtk';
 import GdkPixbuf from 'gi://GdkPixbuf';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
