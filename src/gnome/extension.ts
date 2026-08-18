@@ -27,6 +27,7 @@ import {
   AppInitializationState,
   AppInitializationStatus,
 } from '@homebackend/ts-common';
+import { gnomeFetch } from '@homebackend/ts-common/gnome';
 import { baseAssetName, organization, repo } from '../common/update/constants';
 
 const ICON_SIZE = 22;
@@ -297,7 +298,8 @@ export default class LiveScoreExtension
       repo,
       baseAssetName,
       this._updateEnv,
-      (m) => console.log(...m)
+      (m) => console.log(...m),
+      gnomeFetch
     );
     this._initializationCubit.on('state', async (s) => {
       if (s.state === AppInitializationState.showUpdateDetails) {

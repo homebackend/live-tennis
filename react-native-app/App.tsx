@@ -53,6 +53,7 @@ function App() {
           baseAssetName,
           env,
           console.log,
+          fetch
         );
         updateCubitRef.current = new RNAppUpdateCubit(
           baseAssetName,

@@ -2,7 +2,7 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
-import Gtk, { AccessibleAnnouncementPriority } from 'gi://Gtk';
+import Gtk from 'gi://Gtk';
 import GdkPixbuf from 'gi://GdkPixbuf';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -30,6 +30,7 @@ import {
   createPostInstallPage,
   createUpdatePage,
 } from './autoupgrade/ui';
+import { gnomeFetch } from '@homebackend/ts-common/gnome';
 
 const CountryItem = GObject.registerClass(
   {
@@ -402,7 +403,8 @@ export default class LiveScorePreferences extends ExtensionPreferences {
       repo,
       baseAssetName,
       env,
-      (m) => console.log(...m)
+      (m) => console.log(...m),
+      gnomeFetch
     );
 
     const loadPage = createLoadPage();

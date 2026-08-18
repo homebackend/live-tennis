@@ -24,13 +24,21 @@ const config = {
     extraNodeModules: {
       '@common': commonCodeRoot,
       '@lib': libCodeRoot,
-      common: commonCodeRoot, // if you also use common/*
+      common: commonCodeRoot,
       lib: libCodeRoot,
     },
     nodeModulesPaths: [
       path.resolve(projectRoot, 'node_modules'),
       parentNodeModules,
     ],
+    resolveRequest: (context, moduleName, platform) => {
+      if (moduleName.startsWith('gi://')) {
+        return {
+          type: 'empty',
+        };
+      }
+      return context.resolveRequest(context, moduleName, platform);
+    },
   },
 };
 
